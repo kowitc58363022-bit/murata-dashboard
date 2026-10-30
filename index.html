@@ -1,0 +1,3432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>muRata | Maintenance Work Overview · Electronic</title>
+  <style>
+    /* ============================================================== */
+    /* TOKENS                                                         */
+    /* Brand red is reserved for identity (logo, active nav) and the  */
+    /* primary button. Status and severity each own one colour that   */
+    /* charts and badges share. Everything else is neutral ink.       */
+    /* ============================================================== */
+    :root {
+      --brand: #ED1C24;
+      --brand-ink: #C4161C;          /* white text passes AA on this, not on --brand */
+      --brand-ink-hover: #A31217;
+
+      --canvas: #F3F4F6;
+      --surface: #FFFFFF;
+      --surface-2: #F8F9FA;
+      --rail: #17191C;
+      --rail-hover: #24272B;
+
+      --ink: #16191D;
+      --ink-2: #3B4350;
+      --ink-3: #5B6472;
+      --line: #E3E6EA;
+      --line-strong: #CBD0D6;
+      --focus: rgba(196, 22, 28, 0.35);
+
+      /* Status: text on tint (badges) and solid (charts) */
+      --st-done: #1E6B38;   --st-done-bg: #E5F3EA;   --c-done: #2E8B4E;
+      --st-prog: #1F4E85;   --st-prog-bg: #E6EFFA;   --c-prog: #2F6FB2;
+      --st-part: #5B3591;   --st-part-bg: #F0EAF8;   --c-part: #7A4FB3;
+      --st-pend: #3F4753;   --st-pend-bg: #EEF0F3;   --c-pend: #A3ACB8;
+
+      /* Severity */
+      --sev-crit: #B71C1C;  --sev-crit-band: #FDF0F0; --c-crit: #C62828;
+      --sev-watch: #8A4B00; --sev-watch-bg: #FDF0DC; --c-watch: #E0A23B;
+      --sev-normal: #3F4753; --sev-normal-bg: #EEF0F3; --c-normal: #A3ACB8;
+
+      /* Spacing (4-based) and shape */
+      --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px;
+      --r-sm: 6px; --r-md: 10px;
+
+      /* Type roles */
+      --fs-meta: 12px;
+      --fs-label: 13px;
+      --fs-body: 14px;
+      --fs-title: 15px;
+      --fs-page: 22px;
+      --font: 'Segoe UI', 'Leelawadee UI', 'Noto Sans Thai', system-ui, -apple-system, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      font-size: var(--fs-body);
+      line-height: 1.45;
+      background: var(--canvas);
+      color: var(--ink);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input, select, textarea { font-family: inherit; color: inherit; }
+    ::selection { background: rgba(237, 28, 36, 0.18); color: var(--ink); }
+    :focus-visible { outline: 2px solid var(--brand-ink); outline-offset: 2px; }
+    .num { font-variant-numeric: tabular-nums; }
+
+    /* ============================================================== */
+    /* LEFT RAIL                                                      */
+    /* ============================================================== */
+    .sidebar {
+      width: 76px;
+      background: var(--rail);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--s4) 0;
+      z-index: 1000;
+      flex-shrink: 0;
+    }
+    .sidebar-top {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      gap: var(--s5);
+    }
+    .brand-logo-wrap {
+      width: 54px;
+      height: 38px;
+      background: #FFFFFF;
+      border-radius: var(--r-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--s1);
+    }
+    .brand-logo { width: 100%; height: 100%; object-fit: contain; }
+
+    .sidebar-nav, .sidebar-bottom {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--s2);
+      width: 100%;
+    }
+    .nav-icon-btn {
+      width: 64px;
+      padding: var(--s2) 0;
+      border-radius: var(--r-sm);
+      border: none;
+      background: transparent;
+      color: #A7AFBA;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--s1);
+      cursor: pointer;
+      position: relative;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1px;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .nav-icon-btn svg { width: 22px; height: 22px; }
+    .nav-icon-btn:hover { background: var(--rail-hover); color: #FFFFFF; }
+    .nav-icon-btn.active { background: var(--rail-hover); color: #FFFFFF; }
+    .nav-icon-btn.active::before {
+      content: '';
+      position: absolute;
+      left: -6px;
+      top: 10px;
+      bottom: 10px;
+      width: 3px;
+      background: var(--brand);
+      border-radius: 0 2px 2px 0;
+    }
+    .nav-icon-btn:focus-visible { outline-color: #FFFFFF; }
+
+    /* ============================================================== */
+    /* MAIN                                                           */
+    /* ============================================================== */
+    .app-main {
+      flex: 1;
+      min-width: 0;
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .tab-view {
+      display: none;
+      padding: var(--s5);
+      flex: 1;
+    }
+    .tab-view.active { display: flex; flex-direction: column; }
+
+    @media (max-width: 720px) {
+      .tab-view { padding: var(--s4); }
+      :root { --fs-page: 19px; }
+    }
+
+    /* ============================================================== */
+    /* TAB 2: WORK OVERVIEW                                           */
+    /* ============================================================== */
+    .tv-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: var(--s3);
+      flex: 1;
+      height: 100%;
+      min-height: 0;
+    }
+    .tv-header {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--r-md);
+      padding: var(--s3) var(--s5);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--s3);
+    }
+    .tv-header-left { display: flex; align-items: center; gap: var(--s4); }
+    .tv-header-logo { display: none; height: 40px; object-fit: contain; }
+    .tv-header-title h2 {
+      font-size: var(--fs-page);
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      line-height: 1.2;
+    }
+    .tv-header-title p { font-size: var(--fs-label); color: var(--ink-3); margin-top: 2px; }
+    .tv-header-right { display: flex; align-items: center; gap: var(--s2); }
+    .tv-clock-badge {
+      background: var(--rail);
+      color: #FFFFFF;
+      padding: var(--s2) var(--s4);
+      border-radius: var(--r-sm);
+      font-size: var(--fs-label);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: var(--s3);
+      font-variant-numeric: tabular-nums;
+    }
+    .tv-clock-badge .clock-sep { width: 1px; align-self: stretch; background: rgba(255,255,255,0.2); }
+    /* Data freshness: static dot, colour + words carry the state */
+    .sync-status { display: flex; align-items: center; gap: var(--s2); color: #D5DAE1; }
+    .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #8C95A1; }
+    .sync-status.is-synced .sync-dot { background: #4ADE80; }
+    .sync-status.is-offline .sync-dot { background: #FBBF24; }
+    .sync-status.is-offline { color: #FDE68A; }
+    .tv-fullscreen-btn {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      background: var(--surface);
+      color: var(--ink-2);
+      border: 1px solid var(--line-strong);
+      border-radius: var(--r-sm);
+      cursor: pointer;
+    }
+    .tv-fullscreen-btn svg { width: 18px; height: 18px; }
+    .tv-fullscreen-btn:hover { background: var(--surface-2); color: var(--ink); }
+
+    .tv-filter-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--s3); }
+    .btn-report {
+      order: 2;
+      margin-left: auto;
+      height: 36px;
+      padding: 0 var(--s4);
+      background: var(--brand-ink);
+      color: #FFFFFF;
+      border: none;
+      border-radius: var(--r-sm);
+      font-size: var(--fs-label);
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-report:hover { background: var(--brand-ink-hover); }
+    body.tv-wall .btn-report { display: none; }
+
+    /* Sort: one segmented control; the wall keeps whichever order was picked */
+    .sort-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      padding: 3px;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--r-sm);
+      background: var(--surface);
+    }
+    .sort-label { padding: 0 var(--s2); font-size: var(--fs-meta); font-weight: 600; color: var(--ink-3); }
+    .sort-btn {
+      height: 28px;
+      padding: 0 var(--s3);
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--ink-2);
+      font-size: var(--fs-meta);
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .sort-btn:hover { background: var(--surface-2); }
+    .sort-btn[aria-pressed="true"] { background: var(--ink); color: #FFFFFF; }
+    body.tv-wall .sort-group { display: none; }
+
+    /* A just-reported row fades from a highlight so it can be found */
+    .tv-table tr.is-new td { animation: newRow 3s ease-out; }
+    @keyframes newRow { from { background: #FFF4CC; } }
+    .tv-pills { display: flex; flex-wrap: wrap; gap: var(--s2); }
+    .tv-pill-btn {
+      height: 34px;
+      padding: 0 var(--s4);
+      border-radius: 17px;
+      border: 1px solid var(--line-strong);
+      background: var(--surface);
+      color: var(--ink-2);
+      font-size: var(--fs-label);
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--s2);
+      white-space: nowrap;
+    }
+    .tv-pill-btn .pill-count {
+      min-width: 22px;
+      padding: 0 6px;
+      border-radius: 10px;
+      background: var(--canvas);
+      color: var(--ink-2);
+      font-size: var(--fs-meta);
+      line-height: 20px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+    .tv-pill-btn:hover { background: var(--surface-2); }
+    .tv-pill-btn.active { background: var(--ink); border-color: var(--ink); color: #FFFFFF; }
+    .tv-pill-btn.active .pill-count { background: rgba(255,255,255,0.18); color: #FFFFFF; }
+    .tv-pill-btn.p-late .pill-count { color: var(--sev-crit); }
+    .tv-pill-btn.p-late.active .pill-count { color: #FFFFFF; }
+
+    /* Desk view uses the pills for counts; the wall swaps to these */
+    .tv-stats-quick { display: none; gap: var(--s5); font-weight: 600; }
+    .tv-stat-item { display: flex; align-items: baseline; gap: var(--s2); color: var(--ink-2); }
+
+    .tv-table-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--r-md);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 0;
+    }
+    .tv-table-container { flex: 1; overflow: auto; }
+    .tv-table { width: 100%; border-collapse: collapse; font-size: var(--fs-body); }
+    .tv-table thead { background: var(--surface-2); position: sticky; top: 0; z-index: 5; }
+    .tv-table th {
+      padding: var(--s3) var(--s4);
+      font-size: var(--fs-meta);
+      font-weight: 600;
+      color: var(--ink-3);
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+      white-space: nowrap;
+    }
+    .tv-table td {
+      padding: var(--s3) var(--s4);
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+    .tv-table tbody tr:last-child td { border-bottom: none; }
+    /* Column widths; Action takes what is left */
+    .tv-table .col-date { width: 8%; }
+    .tv-table .col-line { width: 15%; }
+    .tv-table .col-problem { width: 20%; }
+    .tv-table .col-status { width: 11%; text-align: center; }
+    .tv-table .col-due { width: 9%; }
+    .tv-table .col-pic { width: 12%; }
+    .pic-name { color: var(--ink-2); font-weight: 600; font-size: var(--fs-label); overflow-wrap: anywhere; }
+    .tv-table .col-edit { width: 64px; text-align: center; }
+    /* Status, severity and edit sit in the middle of tall rows (several actions) */
+    .tv-table td.cell-mid { vertical-align: middle; text-align: center; }
+    .tv-table tr:hover td { background: var(--surface-2); }
+
+    .tv-issue-text { color: var(--ink); font-weight: 600; }
+    /* Actions: one line per action, each with its own status chip */
+    .action-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .action-list li { display: flex; align-items: baseline; gap: var(--s2); line-height: 1.45; }
+    .act-chip {
+      flex-shrink: 0;
+      min-width: 68px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .act-text { color: var(--ink-2); min-width: 0; }
+    .act-todo .act-chip { background: var(--st-pend-bg); color: var(--st-pend); }
+    .act-progress .act-chip { background: var(--st-prog-bg); color: var(--st-prog); }
+    .act-done .act-chip { background: var(--st-done-bg); color: var(--st-done); }
+    .act-done .act-text { color: var(--ink-3); }
+    .action-empty { color: var(--ink-3); font-size: var(--fs-label); }
+
+    .machine-line {
+      display: inline-block;
+      margin-bottom: var(--s1);
+      padding: 1px 7px;
+      border-radius: 4px;
+      background: var(--canvas);
+      border: 1px solid var(--line-strong);
+      color: var(--ink-2);
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      font-variant-numeric: tabular-nums;
+    }
+    .machine-name { display: block; color: var(--ink); font-weight: 600; }
+    /* Due date: the date, with a flag under it when late or close */
+    /* Reported date (Date column) and due date share one style */
+    .report-date, .due-date { display: block; color: var(--ink); font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .due-none { color: var(--ink-3); font-size: var(--fs-label); }
+    .due-flag {
+      display: inline-block;
+      margin-top: var(--s1);
+      padding: 1px 7px;
+      border-radius: 4px;
+      font-size: 11.5px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .due-late { background: var(--sev-crit); color: #FFFFFF; }
+    .due-soon { background: var(--sev-watch-bg); color: var(--sev-watch); }
+
+    /* Read-only status for the wall; the editable select is for desks */
+    .tv-table .status-read { display: none; }
+
+    /* Status + severity chips share one shape */
+    .tv-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: var(--r-sm);
+      font-size: var(--fs-meta);
+      font-weight: 700;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .tv-badge-done { background: var(--st-done-bg); color: var(--st-done); }
+    .tv-badge-repairing { background: var(--st-prog-bg); color: var(--st-prog); }
+    .tv-badge-part { background: var(--st-part-bg); color: var(--st-part); }
+    .tv-badge-pending { background: var(--st-pend-bg); color: var(--st-pend); }
+    .badge-status-normal { background: var(--sev-normal-bg); color: var(--sev-normal); }
+    .badge-status-watch { background: var(--sev-watch-bg); color: var(--sev-watch); }
+    .tv-badge-crit { background: var(--sev-crit); color: #FFFFFF; }
+
+    /* Editable status select, styled as its status chip */
+    .tv-status-select {
+      height: 30px;
+      padding: 0 28px 0 12px;
+      border-radius: var(--r-sm);
+      font-size: var(--fs-meta);
+      font-weight: 700;
+      border: 1px solid transparent;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233B4350' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 9px center;
+      background-size: 12px;
+    }
+    .tv-status-select:hover { border-color: currentColor; }
+    .tv-status-select:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus); border-color: var(--brand-ink); }
+    .tv-status-select option { background: #FFF; color: var(--ink); font-weight: 600; }
+
+    .btn-table-edit {
+      width: 32px;
+      height: 32px;
+      display: inline-grid;
+      place-items: center;
+      background: var(--surface);
+      color: var(--ink-2);
+      border: 1px solid var(--line-strong);
+      border-radius: var(--r-sm);
+      cursor: pointer;
+    }
+    .btn-table-edit svg { width: 16px; height: 16px; }
+    .btn-table-edit:hover { background: var(--ink); border-color: var(--ink); color: #FFFFFF; }
+
+    .tv-footer {
+      padding: var(--s2) var(--s4);
+      background: var(--surface-2);
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--s3);
+      font-size: var(--fs-label);
+      color: var(--ink-3);
+    }
+    .scroll-toggle-btn {
+      height: 30px;
+      padding: 0 var(--s3);
+      background: var(--surface);
+      color: var(--ink-2);
+      border: 1px solid var(--line-strong);
+      border-radius: var(--r-sm);
+      font-size: var(--fs-meta);
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .scroll-toggle-btn:hover { background: var(--canvas); }
+    .scroll-toggle-btn.active { background: var(--ink); border-color: var(--ink); color: #FFFFFF; }
+
+    /* ============================================================== */
+    /* TV WALL MODE (?tv=1 or fullscreen): Tab 2 only, read-only,    */
+    /* type scaled to the viewport so it reads from 3-5 m             */
+    /* ============================================================== */
+    body.tv-wall .sidebar { display: none !important; }
+    body.tv-wall .app-main {
+      width: 100vw !important;
+      height: 100vh !important;
+      padding: 0 !important;
+      overflow: hidden;
+    }
+    body.tv-wall .tab-view { padding: 1.1vw 1.4vw !important; height: 100vh !important; }
+    body.tv-wall #tab2 { display: flex !important; height: 100vh !important; }
+    body.tv-wall .tv-wrapper { gap: 0.8vw; }
+    body.tv-wall .tv-header { padding: 0.7vw 1.3vw; }
+    body.tv-wall .tv-header-logo { display: block !important; height: clamp(40px, 3vw, 72px); }
+    body.tv-wall .tv-header-title h2 { font-size: clamp(24px, 1.75vw, 44px); }
+    body.tv-wall .tv-header-title p { font-size: clamp(14px, 0.95vw, 22px); }
+    body.tv-wall .tv-clock-badge { font-size: clamp(15px, 1.05vw, 26px); padding: 0.55vw 1.1vw; gap: 0.8vw; }
+    body.tv-wall .sync-dot { width: 0.6vw; height: 0.6vw; min-width: 8px; min-height: 8px; }
+    body.tv-wall .tv-fullscreen-btn { width: clamp(36px, 2.6vw, 64px); height: clamp(36px, 2.6vw, 64px); }
+    body.tv-wall .tv-fullscreen-btn svg { width: 50%; height: 50%; }
+
+    /* On the wall the counts replace the filter pills: nobody taps a TV */
+    body.tv-wall .tv-pills { display: none; }
+    body.tv-wall .tv-filter-bar {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--r-md);
+      padding: 0.7vw 1.3vw;
+    }
+    body.tv-wall .tv-stats-quick { display: flex; width: 100%; justify-content: space-between; gap: 2vw; }
+    body.tv-wall .tv-stat-item { font-size: clamp(15px, 1.05vw, 26px); gap: 0.6vw; }
+    body.tv-wall .tv-stat-item strong {
+      font-size: clamp(24px, 1.9vw, 48px);
+      font-weight: 700;
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+    }
+    body.tv-wall .tv-stat-item.stat-late strong { color: var(--sev-crit); }
+
+    body.tv-wall .tv-table { font-size: clamp(16px, 1.1vw, 28px); }
+    body.tv-wall .tv-table th { font-size: clamp(14px, 0.85vw, 22px); padding: 0.65vw 0.9vw; }
+    body.tv-wall .tv-table td { padding: 0.75vw 0.9vw; }
+    body.tv-wall .tv-issue-text { font-size: clamp(17px, 1.15vw, 29px); }
+    /* The wall drops the Edit column; give that room to Problem so it wraps less */
+    body.tv-wall .tv-table .col-date { width: 8%; }
+    body.tv-wall .tv-table .col-line { width: 11%; }
+    body.tv-wall .tv-table .col-problem { width: 21%; }
+    body.tv-wall .tv-table .col-status { width: 9%; }
+    body.tv-wall .tv-table .col-due { width: 9%; }
+    body.tv-wall .tv-table .col-pic { width: 10%; }
+    body.tv-wall .action-list { gap: 0.35vw; }
+    body.tv-wall .act-text {
+      font-size: clamp(15px, 1vw, 25px);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    body.tv-wall .act-chip { font-size: clamp(11px, 0.75vw, 19px); min-width: 5.2vw; padding: 0.1vw 0.4vw; }
+    body.tv-wall .machine-line { font-size: clamp(13px, 0.8vw, 20px); }
+    body.tv-wall .report-date, body.tv-wall .due-date { font-size: clamp(16px, 1.1vw, 28px); }
+    body.tv-wall .pic-name { font-size: clamp(15px, 0.95vw, 24px); }
+    body.tv-wall .due-none { font-size: clamp(14px, 0.9vw, 22px); }
+    body.tv-wall .due-flag { font-size: clamp(13px, 0.85vw, 21px); padding: 0.1vw 0.5vw; }
+    body.tv-wall .tv-badge { font-size: clamp(14px, 0.9vw, 24px); padding: 0.3vw 0.7vw; }
+    body.tv-wall .col-edit,
+    body.tv-wall .status-edit,
+    body.tv-wall .tv-footer-hint { display: none; }
+    body.tv-wall .status-read { display: inline-block; }
+    /* Wall rows stay white; a stronger divider keeps each row easy to follow */
+    body.tv-wall .tv-table tbody tr td { background: #FFFFFF; border-bottom-color: var(--line-strong); }
+    body.tv-wall .tv-table thead { background: #DDE2E8; }
+    body.tv-wall .tv-table th { color: var(--ink-2); }
+    body.tv-wall .tv-footer { font-size: clamp(13px, 0.85vw, 20px); padding: 0.5vw 1.3vw; }
+
+    /* Wall status: solid fills + an emoji, readable from across the floor */
+    .st-emoji, .stat-emoji { display: none; }
+    body.tv-wall .st-emoji, body.tv-wall .stat-emoji { display: inline; margin-right: 0.3em; }
+    body.tv-wall .status-read { color: #FFFFFF; padding: 0.4vw 0.9vw; font-size: clamp(15px, 1vw, 26px); }
+    body.tv-wall .status-read.tv-badge-repairing { background: var(--c-prog); }
+    body.tv-wall .status-read.tv-badge-part { background: var(--c-part); }
+    body.tv-wall .status-read.tv-badge-pending { background: #5B6573; }
+    body.tv-wall .status-read.tv-badge-done { background: var(--st-done); }
+    body.tv-wall .act-progress .act-chip { background: var(--c-prog); color: #FFFFFF; }
+    body.tv-wall .act-done .act-chip { background: var(--st-done); color: #FFFFFF; }
+    body.tv-wall .act-todo .act-chip { background: #FFFFFF; color: var(--ink-2); box-shadow: inset 0 0 0 1.5px var(--line-strong); }
+    /* Stat numbers take their status colour, so the strip doubles as the legend */
+    body.tv-wall .tv-stat-item.stat-prog strong { color: var(--c-prog); }
+    body.tv-wall .tv-stat-item.stat-part strong { color: var(--c-part); }
+
+    /* Status stripe on the row's left edge */
+    .tv-table tr td:first-child { box-shadow: inset 4px 0 0 var(--row-st, transparent); }
+    body.tv-wall .tv-table tr td:first-child { box-shadow: inset max(5px, 0.35vw) 0 0 var(--row-st, transparent); }
+    .tv-table tr.st-prog { --row-st: var(--c-prog); }
+    .tv-table tr.st-part { --row-st: var(--c-part); }
+    .tv-table tr.st-pend { --row-st: var(--c-pend); }
+    .tv-table tr.st-done { --row-st: var(--c-done); }
+
+    /* Row mascot (wall only): a technician acting out each job's status.
+       They stand on a disc in the status colour, so it reads as status even before the pose does. */
+    .tv-table .col-mascot { display: none; }
+    body.tv-wall .tv-table .col-mascot { display: table-cell; width: 7%; padding-left: 0; padding-right: 0; }
+    .row-mascot { width: clamp(64px, 5vw, 124px); height: auto; overflow: visible; display: block; margin: 0 auto; }
+    .m-disc { stroke-width: 2; }
+    .m-busy .m-disc { fill: var(--st-prog-bg); stroke: var(--c-prog); }
+    .m-wait .m-disc { fill: var(--st-part-bg); stroke: var(--c-part); }
+    .m-queue .m-disc { fill: var(--st-pend-bg); stroke: var(--c-pend); }
+    .m-done .m-disc { fill: var(--st-done-bg); stroke: var(--c-done); }
+    .m-body { transform-box: fill-box; transform-origin: 50% 100%; }
+    /* In Progress: turning a bolt on a pipe flange with a wrench, gear turning */
+    .m-busy .m-body { animation: m-jitter 0.3s ease-in-out infinite alternate; }
+    .m-busy .m-tool { transform-box: fill-box; transform-origin: 80% 50%; animation: m-turn 0.55s ease-in-out infinite alternate; }
+    .m-busy .m-spark { animation: m-flash 0.45s steps(2) infinite; }
+    .m-gear { transform-box: fill-box; transform-origin: center; animation: m-spin 2.4s linear infinite; }
+    /* Awaiting Parts: looking out for the delivery truck bringing the part, clock running */
+    .m-wait .m-truck { animation: m-drive 0.5s ease-in-out infinite alternate; }
+    .m-wait .m-speed { animation: m-flash 0.5s steps(2) infinite; }
+    .m-wait .m-clock-hand { transform-box: view-box; transform-origin: 57px 9px; animation: m-spin 4s linear infinite; }
+    /* Pending: clipboard in hand, hourglass running, not started yet */
+    .m-queue .m-body { animation: m-idle 3.5s ease-in-out infinite; }
+    .m-hourglass { transform-box: fill-box; transform-origin: center; animation: m-flip 3s ease-in-out infinite; }
+    .m-dots circle { animation: m-flash 1.2s steps(2) infinite; }
+    .m-dots circle:nth-child(2) { animation-delay: 0.3s; }
+    .m-dots circle:nth-child(3) { animation-delay: 0.6s; }
+    /* Completed: arms up, check badge, confetti */
+    .m-done .m-body { animation: m-hop 1.1s ease-in-out infinite; }
+    .m-done .m-check { transform-box: fill-box; transform-origin: center; animation: m-pop 1.1s ease-in-out infinite; }
+    .m-done .m-confetti { animation: m-flash 0.8s steps(2) infinite; }
+    /* Overdue: flashing alert badge */
+    .m-alert { animation: m-flash 0.8s steps(2) infinite; }
+    @keyframes m-jitter { from { transform: translateY(0); } to { transform: translateY(-1.5px) rotate(-1.5deg); } }
+    @keyframes m-turn { from { transform: rotate(-12deg); } to { transform: rotate(8deg); } }
+    @keyframes m-spin { to { transform: rotate(360deg); } }
+    @keyframes m-drive { from { transform: translate(0, 0); } to { transform: translate(-1.5px, -0.8px); } }
+    @keyframes m-idle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1px); } }
+    @keyframes m-flip { 0%, 70% { transform: rotate(0); } 85%, 100% { transform: rotate(180deg); } }
+    @keyframes m-hop { 0%, 100% { transform: translateY(0); } 35% { transform: translateY(-9%); } }
+    @keyframes m-pop { 0%, 100% { transform: scale(1); } 35% { transform: scale(1.15); } }
+    @keyframes m-flash { 50% { opacity: 0.25; } }
+
+    /* Nothing open: say so with a smile instead of an empty table */
+    .tv-empty td { text-align: center; padding: 4vw 1vw !important; color: var(--ink-3); font-size: clamp(16px, 1.2vw, 30px); font-weight: 600; }
+    .tv-empty .empty-emoji { display: block; font-size: 2.4em; margin-bottom: 0.3em; }
+
+    /* ============================================================== */
+    /* TOAST: success auto-hides, errors stay until handled           */
+    /* ============================================================== */
+    .toast-box {
+      position: fixed;
+      bottom: var(--s5);
+      right: var(--s5);
+      max-width: min(520px, calc(100vw - 48px));
+      background: var(--rail);
+      color: #FFFFFF;
+      padding: var(--s3) var(--s3) var(--s3) var(--s4);
+      border-radius: var(--r-md);
+      font-size: var(--fs-body);
+      font-weight: 500;
+      line-height: 1.4;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.22);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      gap: var(--s3);
+      transform: translateY(16px);
+      opacity: 0;
+      visibility: hidden;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, visibility 0.2s;
+    }
+    .toast-box.show { transform: translateY(0); opacity: 1; visibility: visible; }
+    .toast-box.is-error { background: #7F1D1D; }
+    .toast-box #toastIcon { display: grid; place-items: center; color: #4ADE80; }
+    .toast-box.is-error #toastIcon { color: #FCA5A5; }
+    .toast-box #toastIcon svg { width: 18px; height: 18px; }
+    .toast-box #toastMsg { flex: 1; }
+    .toast-action {
+      background: #FFFFFF;
+      color: var(--ink);
+      border: none;
+      border-radius: var(--r-sm);
+      padding: 6px 14px;
+      font-size: var(--fs-label);
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .toast-action[hidden] { display: none; }
+    .toast-close {
+      background: transparent;
+      border: none;
+      color: rgba(255,255,255,0.75);
+      font-size: 20px;
+      line-height: 1;
+      padding: 4px 6px;
+      cursor: pointer;
+    }
+    .toast-close:hover { color: #FFFFFF; }
+    .toast-action:focus-visible, .toast-close:focus-visible { outline-color: #FFFFFF; }
+
+    /* Row being saved: locked until the server answers */
+    .tv-table tr.is-saving td { opacity: 0.55; }
+    .tv-table tr.is-saving .tv-status-select { cursor: progress; }
+
+    /* ============================================================== */
+    /* DIALOGS (native <dialog>: Escape, focus trap and backdrop)     */
+    /* ============================================================== */
+    dialog.edit-modal { border: none; padding: 0; margin: auto; }
+    dialog.edit-modal::backdrop { background: rgba(22, 25, 29, 0.5); }
+    .edit-modal {
+      background: var(--surface);
+      width: 90%;
+      max-width: 540px;
+      border-radius: var(--r-md);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.2);
+      overflow: hidden;
+      color: var(--ink);
+    }
+    .confirm-modal { max-width: 440px; }
+    .confirm-modal .edit-modal-body p { font-size: var(--fs-body); line-height: 1.5; color: var(--ink-2); }
+    .confirm-modal .confirm-job { font-weight: 700; color: var(--ink); }
+    .edit-modal-header {
+      padding: var(--s4) var(--s5);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--s3);
+    }
+    .edit-modal-header h3 { font-size: var(--fs-title); font-weight: 700; }
+    .edit-modal-close {
+      background: transparent;
+      border: none;
+      color: var(--ink-3);
+      font-size: 22px;
+      line-height: 1;
+      padding: 2px 6px;
+      border-radius: var(--r-sm);
+      cursor: pointer;
+    }
+    .edit-modal-close:hover { background: var(--canvas); color: var(--ink); }
+    #editModal { max-width: 680px; }
+    .edit-modal-body {
+      padding: var(--s5);
+      display: flex;
+      flex-direction: column;
+      gap: var(--s4);
+      max-height: calc(100vh - 180px);
+      overflow-y: auto;
+    }
+
+    /* Report form */
+    .form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s4); }
+    .form-row.line-row { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+    #rpLineOther[hidden] { display: none; }
+    .code-input { text-transform: uppercase; font-variant-numeric: tabular-nums; letter-spacing: 0.3px; }
+    .code-input::placeholder { text-transform: none; letter-spacing: 0; }
+    .field-hint:empty { display: none; }
+    .field-optional { font-weight: 400; color: var(--ink-3); margin-left: var(--s1); }
+    .field-hint { font-size: var(--fs-meta); color: var(--ink-3); }
+    fieldset.seg-field { border: none; min-width: 0; }
+    fieldset.seg-field legend { font-size: var(--fs-label); font-weight: 600; color: var(--ink-2); margin-bottom: 6px; }
+    .seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s2); }
+    .seg-opt { position: relative; cursor: pointer; }
+    .seg-opt input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+    .seg-opt span {
+      display: grid;
+      place-items: center;
+      height: 40px;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--r-sm);
+      font-size: var(--fs-label);
+      font-weight: 600;
+      color: var(--ink-2);
+      background: var(--surface);
+    }
+    .seg-opt:hover span { background: var(--surface-2); }
+    .seg-opt input:focus-visible + span { box-shadow: 0 0 0 3px var(--focus); border-color: var(--brand-ink); }
+    .seg-normal input:checked + span { background: var(--sev-normal-bg); color: var(--sev-normal); border-color: var(--sev-normal); }
+    .seg-watch input:checked + span { background: var(--sev-watch-bg); color: var(--sev-watch); border-color: var(--sev-watch); }
+    .seg-crit input:checked + span { background: var(--sev-crit); color: #FFFFFF; border-color: var(--sev-crit); }
+    .modal-select.is-invalid { border-color: var(--sev-crit); }
+    #reportModal { max-width: 640px; }
+    @media (max-width: 560px) { .form-row { grid-template-columns: minmax(0, 1fr); } }
+
+    /* Action editor: number, description, status, remove */
+    .actions-head { display: flex; justify-content: space-between; align-items: baseline; }
+    .field-label { font-size: var(--fs-label); font-weight: 600; color: var(--ink-2); }
+    .actions-summary { font-size: var(--fs-meta); color: var(--ink-3); }
+    .action-editor { list-style: none; display: flex; flex-direction: column; gap: var(--s2); }
+    .action-row {
+      display: grid;
+      grid-template-columns: 22px minmax(0, 1fr) 132px 36px;
+      gap: var(--s2);
+      align-items: start;
+    }
+    .action-num {
+      padding-top: 10px;
+      font-size: var(--fs-meta);
+      font-weight: 700;
+      color: var(--ink-3);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .action-row .action-text { min-height: 40px; }
+    .action-row .action-status { height: 40px; font-weight: 700; font-size: var(--fs-label); }
+    .action-status.act-todo { background: var(--st-pend-bg); color: var(--st-pend); border-color: transparent; }
+    .action-status.act-progress { background: var(--st-prog-bg); color: var(--st-prog); border-color: transparent; }
+    .action-status.act-done { background: var(--st-done-bg); color: var(--st-done); border-color: transparent; }
+    .action-status option { background: #FFF; color: var(--ink); }
+    .btn-remove-action {
+      width: 36px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: var(--r-sm);
+      color: var(--ink-3);
+      cursor: pointer;
+    }
+    .btn-remove-action svg { width: 17px; height: 17px; }
+    .btn-remove-action:hover { background: #FDECEC; color: var(--sev-crit); }
+    .actions-empty { font-size: var(--fs-label); color: var(--ink-3); }
+    .actions-empty[hidden] { display: none; }
+    .btn-add-action {
+      align-self: flex-start;
+      height: 34px;
+      padding: 0 var(--s3);
+      background: var(--surface);
+      border: 1px dashed var(--line-strong);
+      border-radius: var(--r-sm);
+      color: var(--ink-2);
+      font-size: var(--fs-label);
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-add-action:hover { background: var(--surface-2); border-style: solid; color: var(--ink); }
+    @media (max-width: 560px) {
+      .action-row { grid-template-columns: 18px minmax(0, 1fr) 36px; }
+      .action-row .action-status { grid-column: 2; grid-row: 2; }
+      .action-row .btn-remove-action { grid-column: 3; grid-row: 1; }
+    }
+    .modal-field { display: flex; flex-direction: column; gap: 6px; }
+    .modal-field label { font-size: var(--fs-label); font-weight: 600; color: var(--ink-2); }
+    .modal-input, .modal-select, .modal-textarea {
+      padding: 9px var(--s3);
+      border-radius: var(--r-sm);
+      border: 1px solid var(--line-strong);
+      font-size: var(--fs-body);
+      background: var(--surface);
+    }
+    .modal-input[readonly] { background: var(--surface-2); color: var(--ink-2); border-color: var(--line); }
+    .modal-textarea { resize: vertical; line-height: 1.45; }
+    .modal-input:focus-visible, .modal-select:focus-visible, .modal-textarea:focus-visible {
+      outline: none;
+      border-color: var(--brand-ink);
+      box-shadow: 0 0 0 3px var(--focus);
+    }
+    .field-error { font-size: var(--fs-meta); font-weight: 600; color: var(--sev-crit); }
+    .field-error:empty { display: none; }
+    .modal-input.is-invalid, .modal-textarea.is-invalid { border-color: var(--sev-crit); }
+    .edit-modal-footer {
+      padding: var(--s3) var(--s5);
+      background: var(--surface-2);
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--s2);
+    }
+    .save-error { flex: 1; align-self: center; font-size: var(--fs-meta); font-weight: 600; color: var(--sev-crit); }
+    .btn-cancel, .btn-save-edit {
+      height: 36px;
+      padding: 0 var(--s4);
+      border-radius: var(--r-sm);
+      font-size: var(--fs-label);
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-cancel { background: var(--surface); border: 1px solid var(--line-strong); color: var(--ink-2); }
+    .btn-cancel:hover { background: var(--canvas); }
+    .btn-save-edit { background: var(--brand-ink); border: none; color: #FFFFFF; font-weight: 700; }
+    .btn-save-edit:hover { background: var(--brand-ink-hover); }
+    .btn-save-edit:disabled { opacity: 0.6; cursor: progress; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; animation: none !important; }
+    }
+  </style>
+  <style id="todo-tab">
+    /* ================================================================== */
+    /* DAILY TO-DO TAB                                                    */
+    /* ================================================================== */
+    /* View switch in the header */
+    .view-tabs { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); }
+    .view-tabs button {
+      height: clamp(30px, 2vw, 48px);
+      padding: 0 clamp(10px, 0.9vw, 20px);
+      border: none; border-radius: 5px; background: transparent;
+      font: inherit; font-size: clamp(13px, 0.85vw, 20px); font-weight: 700; color: var(--ink-2);
+      cursor: pointer; white-space: nowrap;
+    }
+    .view-tabs button:hover { background: var(--surface-2); color: var(--ink); }
+    .view-tabs button[aria-pressed="true"] { background: var(--rail); color: #FFFFFF; box-shadow: inset 0 -2px 0 var(--accent-glow, #22D3EE); }
+
+    /* In to-do mode the work list parts step aside; the header stays */
+    body.show-todo .tv-filter-bar, body.show-todo .tv-table-card { display: none !important; }
+    .todo-view[hidden] { display: none !important; }
+    .todo-view {
+      flex: 1; min-height: 0;
+      display: flex; flex-direction: column; gap: var(--s3);
+      font-size: clamp(14px, 0.9vw, 20px);
+    }
+
+    .todo-bar, .todo-add {
+      position: relative;
+      display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3);
+      padding: var(--s3) var(--s4);
+      background: var(--panel, var(--surface));
+      border: 1px solid var(--line-strong);
+      border-radius: var(--r-md);
+    }
+    .todo-day { display: inline-flex; align-items: center; gap: 6px; }
+    .todo-day-label { font-weight: 700; color: var(--ink); }
+    .todo-summary { margin-left: auto; font-family: var(--mono, inherit); font-weight: 700; color: var(--accent, var(--ink-2)); }
+
+    .todo-input {
+      height: 40px; padding: 0 10px;
+      border: 1px solid var(--line-strong); border-radius: 6px;
+      background: var(--surface); color: var(--ink);
+      font: inherit; font-size: 0.95em;
+    }
+    .todo-input:focus-visible { outline: none; border-color: var(--accent, #0E7490); box-shadow: 0 0 0 3px var(--accent-dim, rgba(8, 145, 178, 0.12)); }
+    .todo-date { font-family: var(--mono, inherit); }
+    .todo-icon-btn, .todo-btn-ghost {
+      height: 40px; min-width: 40px; padding: 0 12px;
+      border: 1px solid var(--line-strong); border-radius: 6px;
+      background: var(--surface); color: var(--ink-2);
+      font: inherit; font-weight: 700; cursor: pointer;
+    }
+    .todo-icon-btn { font-size: 1.3em; line-height: 1; padding: 0; }
+    .todo-icon-btn:hover, .todo-btn-ghost:hover { border-color: var(--accent, #0E7490); color: var(--accent, #0E7490); }
+
+    /* Add form */
+    .todo-add { align-items: flex-end; }
+    .todo-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .todo-field > span { font-size: 0.8em; font-weight: 700; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.6px; }
+    .todo-field em { font-style: normal; font-weight: 600; text-transform: none; letter-spacing: 0; opacity: 0.8; }
+    .todo-field-tech { flex: 0 1 220px; }
+    .todo-field-text { flex: 1 1 320px; }
+    .todo-field-job { flex: 0 1 300px; }
+    .todo-field .todo-input { width: 100%; }
+    .todo-add-btn {
+      height: 40px; padding: 0 22px;
+      border: none; border-radius: 6px;
+      background: var(--brand-ink); color: #FFFFFF;
+      font: inherit; font-weight: 800; cursor: pointer;
+      box-shadow: 0 4px 14px rgba(196, 22, 28, 0.25);
+    }
+    .todo-add-btn:hover { background: var(--brand-ink-hover); }
+    .todo-add-btn:disabled { opacity: 0.6; cursor: progress; }
+    .todo-error { flex-basis: 100%; min-height: 0; font-size: 0.85em; font-weight: 700; color: var(--sev-crit); }
+    .todo-error:empty { display: none; }
+
+    /* List: one card per technician */
+    .todo-list {
+      flex: 1; min-height: 0; overflow-y: auto;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
+      align-content: start; gap: var(--s3);
+      padding-bottom: var(--s3);
+    }
+    .todo-card {
+      background: var(--panel, var(--surface));
+      border: 1px solid var(--line-strong);
+      border-top: 3px solid var(--accent-glow, #22D3EE);
+      border-radius: var(--r-md);
+      overflow: hidden;
+    }
+    .todo-card-head { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+    .todo-avatar {
+      width: 32px; height: 32px; flex-shrink: 0; border-radius: 50%;
+      display: grid; place-items: center;
+      font-size: 12px; font-weight: 800; color: #FFFFFF; background: var(--avatar, #64748B);
+    }
+    .todo-card-head h3 { font-size: 1em; font-weight: 800; color: var(--ink); }
+    .todo-progress { margin-left: auto; display: flex; align-items: center; gap: 8px; font-family: var(--mono, inherit); font-size: 0.85em; font-weight: 700; color: var(--ink-2); }
+    .todo-progress i { display: block; width: 80px; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+    .todo-progress i b { display: block; height: 100%; background: var(--c-done); }
+
+    .todo-items { list-style: none; }
+    .todo-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+    .todo-item:last-child { border-bottom: none; }
+    .todo-check {
+      flex-shrink: 0; margin-top: 2px;
+      width: 24px; height: 24px; border-radius: 6px;
+      border: 2px solid var(--line-strong); background: var(--surface);
+      display: grid; place-items: center; cursor: pointer; color: transparent;
+    }
+    .todo-check:hover { border-color: var(--c-done); }
+    .todo-check svg { width: 15px; height: 15px; }
+    .todo-item.is-done .todo-check { background: var(--c-done); border-color: var(--c-done); color: #FFFFFF; box-shadow: 0 0 10px color-mix(in srgb, var(--c-done) 40%, transparent); }
+    .todo-body { flex: 1; min-width: 0; }
+    .todo-text { color: var(--ink); font-weight: 600; overflow-wrap: anywhere; }
+    .todo-item.is-done .todo-text { color: var(--ink-3); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--ink-3) 60%, transparent); }
+    .todo-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 3px; font-size: 0.8em; color: var(--ink-3); }
+    .todo-job {
+      padding: 0 7px; border-radius: 4px;
+      font-family: var(--mono, inherit); font-weight: 700;
+      color: var(--accent, var(--ink-2)); border: 1px solid color-mix(in srgb, var(--accent, #0E7490) 45%, transparent);
+    }
+    .todo-actions { display: flex; gap: 4px; flex-shrink: 0; }
+    .todo-actions button {
+      width: 32px; height: 32px; display: grid; place-items: center;
+      border: 1px solid transparent; border-radius: 6px; background: transparent;
+      color: var(--ink-3); cursor: pointer;
+    }
+    .todo-actions button:hover { border-color: var(--line-strong); color: var(--ink); }
+    .todo-actions button.del:hover { color: var(--sev-crit); border-color: var(--sev-crit); }
+    .todo-actions svg { width: 16px; height: 16px; }
+    .todo-edit-input { width: 100%; }
+    .todo-item.is-saving { opacity: 0.55; pointer-events: none; }
+
+    .todo-empty {
+      grid-column: 1 / -1;
+      padding: 48px 16px; text-align: center;
+      color: var(--ink-3); font-weight: 600;
+      border: 1.5px dashed var(--line-strong); border-radius: var(--r-md);
+    }
+    .todo-empty b { display: block; font-size: 2em; margin-bottom: 6px; }
+
+    @media (max-width: 720px) {
+      .todo-summary { margin-left: 0; }
+      .todo-field-tech, .todo-field-job, .todo-field-text { flex-basis: 100%; }
+      .todo-add-btn { width: 100%; }
+    }
+    .todo-btn-ghost:disabled { opacity: 0.45; cursor: default; border-color: var(--line-strong); color: var(--ink-3); }
+
+  </style>
+  <style id="theme-electronic">
+    /* ================================================================== */
+    /* ELECTRONIC THEME (light): a clean-room instrument panel on white,  */
+    /* with circuit traces behind it. Layered over the Work list page;    */
+    /* layout and behaviour unchanged. Cyan marks structure; status       */
+    /* colours stay reserved for data.                                    */
+    /* ================================================================== */
+    :root {
+      --canvas: #F4F7FB;
+      --surface: #FFFFFF;
+      --surface-2: #F3F7FB;
+      --rail: #0A1220;
+      --rail-hover: #16233A;
+
+      --ink: #0B1324;
+      --ink-2: #334155;
+      --ink-3: #64748B;
+      --line: #DCE4EE;
+      --line-strong: #C3CFDD;
+      --focus: rgba(8, 145, 178, 0.35);
+
+      --accent: #0E7490;          /* text-safe cyan on white */
+      --accent-glow: #22D3EE;     /* decoration only */
+      --accent-dim: rgba(8, 145, 178, 0.10);
+      --brand-ink: #C4161C;
+      --brand-ink-hover: #A31217;
+
+      --st-done: #047857;   --st-done-bg: #E3F8EE;   --c-done: #059669;
+      --st-prog: #0369A1;   --st-prog-bg: #E3F2FD;   --c-prog: #0284C7;
+      --st-part: #6D28D9;   --st-part-bg: #F0EBFE;   --c-part: #7C3AED;
+      --st-pend: #334155;   --st-pend-bg: #EEF2F6;   --c-pend: #64748B;
+
+      --sev-crit: #B91C1C;  --sev-crit-band: #FEF0F0; --c-crit: #DC2626;
+      --sev-watch: #92400E; --sev-watch-bg: #FEF3C7;  --c-watch: #D97706;
+      --sev-normal: #334155; --sev-normal-bg: #EEF2F6; --c-normal: #64748B;
+
+      --mono: 'Cascadia Mono', 'Cascadia Code', Consolas, 'Lucida Console', ui-monospace, monospace;
+      --panel: linear-gradient(180deg, #FFFFFF, #FAFCFE);
+      --panel-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    /* Circuit board: faint cyan traces, pads and vias behind everything */
+    body {
+      background-color: var(--canvas);
+      background-image:
+        radial-gradient(1100px 520px at 88% -12%, rgba(34, 211, 238, 0.12), transparent 60%),
+        radial-gradient(900px 480px at -8% 112%, rgba(124, 58, 237, 0.06), transparent 60%),
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'><g fill='none' stroke='%230891B2' stroke-opacity='0.11' stroke-width='1.5'><path d='M0 40 H70 L95 65 H170 L190 45 H240'/><path d='M0 150 H40 L60 170 H130 L150 150 H240'/><path d='M120 0 V30 L140 50 V110'/><path d='M200 240 V200 L180 180 V120 L200 100 V65'/><path d='M30 240 V205 L50 185 H95'/></g><g fill='%230891B2' fill-opacity='0.16'><circle cx='70' cy='40' r='3'/><circle cx='170' cy='65' r='3'/><circle cx='140' cy='110' r='3.5'/><circle cx='130' cy='170' r='3'/><circle cx='200' cy='65' r='3.5'/><circle cx='95' cy='185' r='3'/><circle cx='40' cy='150' r='3'/></g></svg>");
+      background-size: auto, auto, 240px 240px;
+      color: var(--ink);
+    }
+    ::selection { background: rgba(34, 211, 238, 0.28); color: var(--ink); }
+    :focus-visible { outline-color: var(--accent); }
+
+    /* Monospace for anything read as a value: dates, codes, counts, time */
+    .report-date, .due-date, .machine-name, .machine-line, .pill-count,
+    .tv-stat-item strong, #tvLiveClock, .act-chip, #tvCurrentShowing { font-family: var(--mono); letter-spacing: 0.2px; }
+
+    /* ---------- Rail stays dark: the one solid block, like the board's edge connector ---------- */
+    .sidebar { background: var(--rail); box-shadow: 1px 0 0 rgba(34, 211, 238, 0.25); }
+    .nav-icon-btn { color: #8A97AB; }
+    .nav-icon-btn:hover { background: var(--rail-hover); color: #FFFFFF; }
+    .nav-icon-btn.active { background: var(--rail-hover); color: var(--accent-glow); box-shadow: inset 3px 0 0 var(--accent-glow); }
+
+    /* ---------- Panels with HUD corner brackets ---------- */
+    .tv-header, .tv-table-card, body.tv-wall .tv-filter-bar {
+      position: relative;
+      background: var(--panel);
+      border: 1px solid var(--line-strong);
+      box-shadow: var(--panel-shadow);
+    }
+    .tv-header::before, .tv-header::after,
+    .tv-table-card::before, .tv-table-card::after {
+      content: '';
+      position: absolute;
+      width: 16px; height: 16px;
+      pointer-events: none;
+      z-index: 6;
+    }
+    .tv-header::before, .tv-table-card::before { top: -1px; left: -1px; border-top: 2px solid var(--accent-glow); border-left: 2px solid var(--accent-glow); border-top-left-radius: var(--r-md); }
+    .tv-header::after, .tv-table-card::after { bottom: -1px; right: -1px; border-bottom: 2px solid var(--accent-glow); border-right: 2px solid var(--accent-glow); border-bottom-right-radius: var(--r-md); }
+
+    .tv-header-title h2 { color: var(--ink); }
+    .tv-header-title p { font-family: var(--mono); font-size: var(--fs-meta); letter-spacing: 1.2px; text-transform: uppercase; color: var(--accent); }
+    .tv-header-title p::before { content: '> '; opacity: 0.7; }
+
+    .tv-clock-badge { background: var(--rail); border: 1px solid rgba(34, 211, 238, 0.45); box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.08), 0 4px 14px rgba(8, 145, 178, 0.18); color: #E7EEF8; }
+    .tv-clock-badge .clock-sep { background: rgba(34, 211, 238, 0.3); }
+    .sync-status { color: #B6C2D3; }
+    .sync-status.is-synced .sync-dot { background: #4ADE80; box-shadow: 0 0 8px #4ADE80; animation: led 2s ease-in-out infinite; }
+    .sync-status.is-offline .sync-dot { box-shadow: 0 0 8px #FBBF24; }
+    @keyframes led { 50% { opacity: 0.45; box-shadow: 0 0 2px #4ADE80; } }
+    .tv-fullscreen-btn { background: var(--surface); border-color: var(--line-strong); color: var(--ink-2); }
+    .tv-fullscreen-btn:hover { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+
+    /* ---------- Pills, sort, buttons ---------- */
+    .tv-pill-btn, .sort-group { background: var(--surface); border-color: var(--line-strong); color: var(--ink-2); }
+    .tv-pill-btn:hover, .sort-btn:hover { background: var(--surface-2); color: var(--ink); }
+    .tv-pill-btn .pill-count { background: var(--surface-2); color: var(--ink-2); }
+    .tv-pill-btn.active, .sort-btn[aria-pressed="true"] {
+      background: var(--rail); border-color: var(--rail); color: #FFFFFF;
+      box-shadow: inset 0 -2px 0 var(--accent-glow);
+    }
+    .tv-pill-btn.active .pill-count { background: rgba(34, 211, 238, 0.2); color: var(--accent-glow); }
+    .tv-pill-btn.p-late .pill-count { color: var(--sev-crit); }
+    .tv-pill-btn.p-late.active .pill-count { color: #FCA5A5; }
+    .btn-report { box-shadow: 0 4px 14px rgba(196, 22, 28, 0.25); }
+    .btn-table-edit, .scroll-toggle-btn { background: var(--surface); border-color: var(--line-strong); color: var(--ink-2); }
+    .btn-table-edit:hover, .scroll-toggle-btn.active, .scroll-toggle-btn:hover {
+      background: var(--accent-dim); border-color: var(--accent); color: var(--accent);
+    }
+
+    /* ---------- Wall stats as IC chips: black packages with silver pins ---------- */
+    body.tv-wall .tv-filter-bar { padding: 1.1vw 1.3vw; }
+    body.tv-wall .tv-stats-quick { gap: 1.2vw; }
+    body.tv-wall .tv-stat-item {
+      position: relative;
+      flex: 1;
+      justify-content: space-between;
+      padding: 0.55vw 1vw;
+      /* White package with a neon outline in the figure's own colour */
+      --neon: #22D3EE;
+      background: #FFFFFF;
+      border: 1.5px solid var(--neon);
+      border-radius: 6px;
+      color: var(--ink-2);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--neon) 25%, transparent), 0 0 16px color-mix(in srgb, var(--neon) 40%, transparent), inset 0 0 12px color-mix(in srgb, var(--neon) 10%, transparent);
+    }
+    body.tv-wall .tv-stat-item.stat-late { --neon: #F87171; }
+    body.tv-wall .tv-stat-item.stat-prog { --neon: #38BDF8; }
+    body.tv-wall .tv-stat-item.stat-part { --neon: #A78BFA; }
+    body.tv-wall .tv-stat-item::before, body.tv-wall .tv-stat-item::after {
+      content: '';
+      position: absolute; left: 12%; right: 12%;
+      height: 0.45vw; min-height: 5px;
+      background: repeating-linear-gradient(90deg, #A9B4C4 0 0.5vw, transparent 0.5vw 1.1vw);
+    }
+    body.tv-wall .tv-stat-item::before { top: calc(-0.45vw - 1px); }
+    body.tv-wall .tv-stat-item::after { bottom: calc(-0.45vw - 1px); }
+    /* Numbers in the darker, text-safe shade of each neon so they stay sharp on white */
+    body.tv-wall .tv-stat-item strong { color: var(--accent); text-shadow: 0 0 12px rgba(34, 211, 238, 0.35); }
+    body.tv-wall .tv-stat-item.stat-late strong { color: #DC2626; text-shadow: 0 0 12px rgba(248, 113, 113, 0.35); }
+    body.tv-wall .tv-stat-item.stat-prog strong { color: #0284C7; text-shadow: 0 0 12px rgba(56, 189, 248, 0.35); }
+    body.tv-wall .tv-stat-item.stat-part strong { color: #7C3AED; text-shadow: 0 0 12px rgba(167, 139, 250, 0.35); }
+
+    /* ---------- Table ---------- */
+    .tv-table thead { background: #F0F7FA; }
+    .tv-table th {
+      font-family: var(--mono);
+      text-transform: uppercase;
+      letter-spacing: 1.1px;
+      color: var(--accent);
+      border-bottom: 2px solid rgba(8, 145, 178, 0.45);
+    }
+    /* Every cell sits on the row's middle line, so date, equipment and the rest read across as one row */
+    .tv-table td { border-bottom-color: var(--line); vertical-align: middle; }
+    .tv-table tr:hover td { background: #F5FBFD; }
+    body.tv-wall .tv-table thead { background: #F0F7FA; }
+    body.tv-wall .tv-table th { color: var(--accent); }
+    body.tv-wall .tv-table tbody tr td { background: #FFFFFF; border-bottom-color: var(--line); }
+    /* The status stripe, with a soft halo like a lit trace */
+    .tv-table tr td:first-child { box-shadow: inset 4px 0 0 var(--row-st, transparent), inset 20px 0 20px -18px var(--row-st, transparent); }
+    body.tv-wall .tv-table tr td:first-child { box-shadow: inset max(5px, 0.35vw) 0 0 var(--row-st, transparent), inset 1.6vw 0 1.6vw -1.5vw var(--row-st, transparent); }
+    .tv-table tr.is-new td { animation: newRowGlow 3s ease-out; }
+    @keyframes newRowGlow { from { background: rgba(34, 211, 238, 0.2); } }
+
+    /* Equipment code only: the line (MTL-n) is left off the table */
+    .tv-table .machine-line { display: none; }
+    .machine-name, .report-date, .due-date { color: var(--ink); }
+
+    /* Status chips: coloured outline over a light tint, like an indicator lamp */
+    .tv-badge, .tv-status-select, .act-chip { border: none; }
+    .tv-badge-repairing, .act-progress .act-chip { background: var(--st-prog-bg); color: var(--st-prog); box-shadow: inset 0 0 0 1.5px var(--c-prog), 0 0 10px rgba(2, 132, 199, 0.15); }
+    .tv-badge-part { background: var(--st-part-bg); color: var(--st-part); box-shadow: inset 0 0 0 1.5px var(--c-part), 0 0 10px rgba(124, 58, 237, 0.14); }
+    .tv-badge-pending, .act-todo .act-chip { background: var(--st-pend-bg); color: var(--st-pend); box-shadow: inset 0 0 0 1.5px #94A3B8; }
+    .tv-badge-done, .act-done .act-chip { background: var(--st-done-bg); color: var(--st-done); box-shadow: inset 0 0 0 1.5px var(--c-done), 0 0 10px rgba(5, 150, 105, 0.14); }
+    body.tv-wall .status-read.tv-badge-repairing { background: var(--st-prog-bg); color: var(--st-prog); }
+    body.tv-wall .status-read.tv-badge-part { background: var(--st-part-bg); color: var(--st-part); }
+    body.tv-wall .status-read.tv-badge-pending { background: var(--st-pend-bg); color: var(--st-pend); }
+    body.tv-wall .status-read.tv-badge-done { background: var(--st-done-bg); color: var(--st-done); }
+    body.tv-wall .act-progress .act-chip { background: var(--st-prog-bg); color: var(--st-prog); }
+    body.tv-wall .act-done .act-chip { background: var(--st-done-bg); color: var(--st-done); }
+    body.tv-wall .act-todo .act-chip { background: var(--st-pend-bg); color: var(--st-pend); box-shadow: inset 0 0 0 1.5px #94A3B8; }
+
+    .due-late { background: #FEE2E2; color: var(--sev-crit); box-shadow: inset 0 0 0 1.5px #EF4444, 0 0 12px rgba(239, 68, 68, 0.25); animation: lateBlink 2.4s ease-in-out infinite; }
+    .due-soon { background: var(--sev-watch-bg); color: var(--sev-watch); box-shadow: inset 0 0 0 1.5px rgba(217, 119, 6, 0.55); }
+    @keyframes lateBlink { 50% { box-shadow: inset 0 0 0 1.5px #EF4444, 0 0 2px rgba(239, 68, 68, 0.1); } }
+
+    /* ---------- Footer, toast ---------- */
+    .tv-footer { background: #F7FAFC; border-top-color: var(--line); color: var(--ink-3); }
+    .toast-box { background: var(--rail); border: 1px solid rgba(34, 211, 238, 0.4); box-shadow: 0 12px 30px rgba(15, 23, 42, 0.3); }
+
+    /* ---------- Dialogs and forms ---------- */
+    dialog.edit-modal::backdrop { background: rgba(10, 18, 32, 0.45); backdrop-filter: blur(2px); }
+    .edit-modal { border: 1px solid var(--line-strong); border-top: 3px solid var(--accent-glow); box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25); }
+    .modal-input:focus-visible, .modal-select:focus-visible, .modal-textarea:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+    /* ---------- Status animations (replace the technician mascot) ---------- */
+    .row-mascot.ai { overflow: visible; filter: none; }
+    .ai-queue { --ai: #64748B; }
+    .ai-busy { --ai: #0284C7; }
+    .ai-wait { --ai: #7C3AED; }
+    .ai-done { --ai: #059669; }
+    .ai-disc {
+      fill: #FFFFFF;
+      stroke: var(--ai);
+      stroke-width: 2;
+      filter: drop-shadow(0 0 3px color-mix(in srgb, var(--ai) 55%, transparent));
+    }
+    .ai * { transform-box: fill-box; }
+
+    /* Pending: sand runs from top to bottom, then starts again */
+    .ai-sand-top { transform-origin: 50% 100%; animation: ai-drain 3.2s linear infinite; }
+    .ai-sand-bot { transform-origin: 50% 100%; animation: ai-fill 3.2s linear infinite; }
+    .ai-stream { animation: ai-fall 0.5s linear infinite; }
+    @keyframes ai-drain { 0% { transform: scaleY(1); } 90%, 100% { transform: scaleY(0.08); } }
+    @keyframes ai-fill { 0% { transform: scaleY(0.12); } 90%, 100% { transform: scaleY(1); } }
+    @keyframes ai-fall { to { stroke-dashoffset: -3.8; } }
+
+    /* In Progress: gears turn against each other, a progress arc sweeps the rim */
+    .ai-gear-big { transform-origin: center; animation: ai-spin 4s linear infinite; }
+    .ai-gear-small { transform-origin: center; animation: ai-spin-back 2.6s linear infinite; }
+    .ai-arc { transform-origin: center; animation: ai-spin 1.8s linear infinite; }
+    @keyframes ai-spin { to { transform: rotate(360deg); } }
+    @keyframes ai-spin-back { to { transform: rotate(-360deg); } }
+
+    /* Awaiting Parts: the truck rolls on the spot while the road and air stream past */
+    .ai-truck { animation: ai-bump 0.42s ease-in-out infinite alternate; }
+    .ai-wheel { transform-origin: center; animation: ai-spin 0.6s linear infinite; }
+    .ai-road { animation: ai-road 0.6s linear infinite; }
+    .ai-speed { animation: ai-wind 0.6s ease-in-out infinite alternate; }
+    @keyframes ai-bump { to { transform: translateY(-0.8px); } }
+    @keyframes ai-road { to { stroke-dashoffset: 9; } }
+    @keyframes ai-wind { from { opacity: 0.35; transform: translateX(1px); } to { opacity: 1; transform: translateX(-1.5px); } }
+
+    /* Completed: the check draws itself, holds, and redraws; sparkles twinkle */
+    .ai-check { animation: ai-draw 2.6s ease-out infinite; }
+    .ai-spark { transform-origin: center; animation: ai-twinkle 1.6s ease-in-out infinite; }
+    .ai-spark2 { animation-delay: 0.5s; }
+    .ai-spark3 { animation-delay: 1s; }
+    @keyframes ai-draw { 0% { stroke-dashoffset: 26; } 35%, 85% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 26; } }
+    @keyframes ai-twinkle { 0%, 100% { transform: scale(0.5); opacity: 0.4; } 50% { transform: scale(1.15); opacity: 1; } }
+
+    /* Overdue: a red ring pulses outward and the badge blinks */
+    .ai-pulse { transform-origin: center; animation: ai-pulse 1.6s ease-out infinite; }
+    .ai-alert { animation: ai-blink 1s steps(2) infinite; }
+    @keyframes ai-pulse { from { transform: scale(1); opacity: 0.9; } to { transform: scale(1.18); opacity: 0; } }
+    @keyframes ai-blink { 50% { opacity: 0.3; } }
+
+    /* Day/night button: shows a sun by day and a moon at night */
+    .theme-btn svg .moon { display: none; }
+    html.is-night .theme-btn svg .sun { display: none; }
+    html.is-night .theme-btn svg .moon { display: inline; }
+
+    /* Action status chips share one width, sized to the longest label ("In progress") */
+    .action-list .act-chip,
+    body.tv-wall .action-list .act-chip {
+      box-sizing: border-box;
+      width: 8.4em;
+      min-width: 0;
+      padding-left: 0;
+      padding-right: 0;
+      text-align: center;
+    }
+
+    /* Job status badges share one width too, sized to the longest ("Awaiting Parts" with its icon) */
+    body.tv-wall .tv-table .status-read {
+      box-sizing: border-box;
+      width: 10.2em;
+      padding-left: 0;
+      padding-right: 0;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    /* Edit on the display page: the pencil column comes back, sized for the wall */
+    body.tv-wall .tv-table .col-edit { display: table-cell; width: clamp(56px, 3.6vw, 92px); }
+    body.tv-wall .btn-table-edit { width: clamp(34px, 2.2vw, 56px); height: clamp(34px, 2.2vw, 56px); }
+    body.tv-wall .btn-table-edit svg { width: 50%; height: 50%; }
+    .btn-table-edit { box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.15); }
+    .btn-table-edit:hover { box-shadow: 0 0 12px rgba(34, 211, 238, 0.35); }
+
+    /* Display page: no figures strip; the table gets the room, and the logo is larger */
+    body.tv-wall .tv-filter-bar { display: none !important; }
+    /* The logo file is a 600x600 square with the wordmark in its middle third:
+       a 2.9:1 box with object-fit cover crops the white margin away, so the wordmark itself grows */
+    body.tv-wall .tv-header-logo {
+      height: clamp(56px, 4.2vw, 112px) !important;
+      width: auto;
+      aspect-ratio: 2.9 / 1;
+      object-fit: cover;
+      object-position: center;
+    }
+    /* PIC names stay whole on one line */
+    body.tv-wall .pic-name { white-space: nowrap; overflow-wrap: normal; }
+    body.tv-wall .tv-table .col-pic { width: 11%; }
+
+    /* High attention: ⚡ toggle beside Edit; marked rows get an amber tag, tint and glowing edge */
+    .tv-table td.edit-cell { white-space: nowrap; }
+    body.tv-wall .tv-table .col-edit { width: clamp(100px, 6.4vw, 170px); }
+    .attn-btn {
+      width: clamp(34px, 2.2vw, 56px); height: clamp(34px, 2.2vw, 56px);
+      margin-right: 6px;
+      display: inline-grid; place-items: center; vertical-align: middle;
+      border: 1px solid var(--line-strong); border-radius: var(--r-sm);
+      background: var(--surface); color: #94A3B8;
+      cursor: pointer;
+    }
+    .attn-btn svg { width: 50%; height: 50%; }
+    .attn-btn:hover { color: #D97706; border-color: #F59E0B; }
+    .attn-btn[aria-pressed="true"] { background: #F59E0B; border-color: #F59E0B; color: #FFFFFF; box-shadow: 0 0 14px rgba(245, 158, 11, 0.55); }
+    .attn-btn:disabled { opacity: 0.5; cursor: progress; }
+    /* Row tags above the equipment code: NEW (reported today) and HIGH ATTENTION */
+    .row-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+    .new-tag {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 4px;
+      background: #0891B2; color: #FFFFFF;
+      font-family: var(--mono, inherit); font-size: clamp(10px, 0.62vw, 15px); font-weight: 800; letter-spacing: 1px;
+      box-shadow: 0 0 10px rgba(34, 211, 238, 0.55);
+      animation: new-blink 1.6s ease-in-out infinite;
+    }
+    @keyframes new-blink { 50% { box-shadow: 0 0 2px rgba(34, 211, 238, 0.2); opacity: 0.75; } }
+    .attn-tag {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 4px;
+      background: #F59E0B; color: #1F1300;
+      font-family: var(--mono, inherit); font-size: clamp(10px, 0.62vw, 15px); font-weight: 800; letter-spacing: 0.5px;
+      white-space: nowrap;
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.45);
+      animation: attn-glow 2s ease-in-out infinite;
+    }
+    .tv-table tr.is-attn td { background: rgba(245, 158, 11, 0.07) !important; }
+    .tv-table tr.is-attn td:first-child { box-shadow: inset max(5px, 0.35vw) 0 0 #F59E0B, inset 2vw 0 2vw -1.8vw #F59E0B !important; }
+    @keyframes attn-glow { 50% { box-shadow: 0 0 3px rgba(245, 158, 11, 0.2); } }
+
+    /* No auto-scroll on the display page, so no button for it */
+    #autoScrollBtn { display: none !important; }
+
+    /* Status is changeable on the display page: the dropdown replaces the read-only badge,
+       styled like it (same width, colours and outline) plus a small arrow */
+    body.tv-wall .tv-table .status-read { display: none !important; }
+    body.tv-wall .tv-table select.tv-status-select {
+      display: inline-block !important;
+      box-sizing: border-box;
+      width: 10.2em;
+      height: clamp(36px, 2.4vw, 60px);
+      padding: 0 1.8em 0 0.6em;
+      font-size: clamp(15px, 1vw, 26px);
+      font-weight: 700;
+      text-align: center;
+      text-align-last: center;
+      border-radius: var(--r-sm);
+      cursor: pointer;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 0.6em center;
+      background-size: 0.8em;
+    }
+    body.tv-wall .tv-table select.tv-status-select:hover { filter: brightness(0.97); }
+    body.tv-wall .tv-table select.tv-status-select:disabled { opacity: 0.6; cursor: progress; }
+    body.tv-wall .tv-table select.tv-status-select option { font-size: 16px; text-align: left; }
+
+    /* Photo count from the breakdown report; opens the tracking page */
+    .photo-chip {
+      display: inline-block;
+      margin-top: 4px;
+      padding: 1px 8px;
+      border-radius: 4px;
+      border: 1px solid color-mix(in srgb, var(--accent, #0E7490) 50%, transparent);
+      color: var(--accent, #0E7490);
+      font-family: var(--mono, inherit); font-size: clamp(11px, 0.7vw, 17px); font-weight: 800;
+      text-decoration: none;
+    }
+    .photo-chip:hover { background: var(--accent-dim, rgba(8, 145, 178, 0.1)); }
+  </style>
+  <style id="theme-night" media="not all">
+    /* ================================================================== */
+    /* ELECTRONIC THEME: a dark instrument panel on a circuit board.      */
+    /* Layered over the Work list page; layout and behaviour unchanged.   */
+    /* Neon is spent on status and numbers only, so it still means data.  */
+    /* ================================================================== */
+    :root {
+      --canvas: #050912;
+      --surface: #0B1321;
+      --surface-2: #101B2D;
+      --rail: #03060C;
+      --rail-hover: #0E1A2B;
+
+      --ink: #E7EEF8;
+      --ink-2: #B6C2D3;
+      --ink-3: #8090A8;
+      --line: #1A2840;
+      --line-strong: #2A3D5C;
+      --focus: rgba(34, 211, 238, 0.45);
+
+      --accent: #22D3EE;
+      --accent-dim: rgba(34, 211, 238, 0.16);
+      --brand-ink: #E11D2A;
+      --brand-ink-hover: #F23340;
+
+      --st-done: #4ADE80;   --st-done-bg: #0B2A20;   --c-done: #34D399;
+      --st-prog: #7DD3FC;   --st-prog-bg: #0A2438;   --c-prog: #38BDF8;
+      --st-part: #C4B5FD;   --st-part-bg: #1F1838;   --c-part: #A78BFA;
+      --st-pend: #CBD5E1;   --st-pend-bg: #172133;   --c-pend: #64748B;
+
+      --sev-crit: #F87171;  --sev-crit-band: #2A1117; --c-crit: #F87171;
+      --sev-watch: #FBBF24; --sev-watch-bg: #2D220C;  --c-watch: #FBBF24;
+      --sev-normal: #CBD5E1; --sev-normal-bg: #172133; --c-normal: #64748B;
+
+      --mono: 'Cascadia Mono', 'Cascadia Code', Consolas, 'Lucida Console', ui-monospace, monospace;
+      --glow-c: 0 0 0 1px rgba(34, 211, 238, 0.22), 0 0 18px rgba(34, 211, 238, 0.10);
+      --panel: linear-gradient(180deg, rgba(16, 27, 45, 0.94), rgba(9, 16, 29, 0.94));
+      color-scheme: dark;
+    }
+
+    /* Circuit board: faint traces, pads and vias behind everything */
+    body {
+      background-color: var(--canvas);
+      background-image:
+        radial-gradient(1200px 600px at 85% -10%, rgba(34, 211, 238, 0.10), transparent 60%),
+        radial-gradient(900px 500px at -10% 110%, rgba(167, 139, 250, 0.08), transparent 60%),
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'><g fill='none' stroke='%2322D3EE' stroke-opacity='0.07' stroke-width='1.5'><path d='M0 40 H70 L95 65 H170 L190 45 H240'/><path d='M0 150 H40 L60 170 H130 L150 150 H240'/><path d='M120 0 V30 L140 50 V110'/><path d='M200 240 V200 L180 180 V120 L200 100 V65'/><path d='M30 240 V205 L50 185 H95'/></g><g fill='%2322D3EE' fill-opacity='0.12'><circle cx='70' cy='40' r='3'/><circle cx='170' cy='65' r='3'/><circle cx='140' cy='110' r='3.5'/><circle cx='130' cy='170' r='3'/><circle cx='200' cy='65' r='3.5'/><circle cx='95' cy='185' r='3'/><circle cx='40' cy='150' r='3'/></g></svg>");
+      background-size: auto, auto, 240px 240px;
+      color: var(--ink);
+    }
+    ::selection { background: rgba(34, 211, 238, 0.3); color: #FFFFFF; }
+    :focus-visible { outline-color: var(--accent); }
+    * { scrollbar-color: #2A3D5C transparent; scrollbar-width: thin; }
+
+    /* Monospace for anything read as a value: dates, codes, counts, time */
+    .report-date, .due-date, .machine-name, .machine-line, .pill-count,
+    .tv-stat-item strong, #tvLiveClock, .act-chip, #tvCurrentShowing { font-family: var(--mono); letter-spacing: 0.2px; }
+
+    /* ---------- Rail ---------- */
+    .sidebar { background: var(--rail); border-right: 1px solid var(--line); box-shadow: 1px 0 0 rgba(34, 211, 238, 0.06); }
+    .nav-icon-btn { color: #7F8CA3; }
+    .nav-icon-btn:hover { background: var(--rail-hover); color: var(--ink); }
+    .nav-icon-btn.active { background: var(--rail-hover); color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+
+    /* ---------- Panels with HUD corner brackets ---------- */
+    .tv-header, .tv-table-card, body.tv-wall .tv-filter-bar {
+      position: relative;
+      background: var(--panel);
+      border: 1px solid var(--line-strong);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 12px 30px rgba(0, 0, 0, 0.35);
+    }
+    .tv-header::before, .tv-header::after,
+    .tv-table-card::before, .tv-table-card::after {
+      content: '';
+      position: absolute;
+      width: 16px; height: 16px;
+      pointer-events: none;
+      z-index: 6;
+    }
+    .tv-header::before, .tv-table-card::before { top: -1px; left: -1px; border-top: 2px solid var(--accent); border-left: 2px solid var(--accent); border-top-left-radius: var(--r-md); }
+    .tv-header::after, .tv-table-card::after { bottom: -1px; right: -1px; border-bottom: 2px solid var(--accent); border-right: 2px solid var(--accent); border-bottom-right-radius: var(--r-md); }
+
+    .tv-header-logo { background: #FFFFFF; padding: 4px 8px; border-radius: 6px; box-sizing: content-box; }
+    .tv-header-title h2 { color: #F4F8FF; text-shadow: 0 0 22px rgba(34, 211, 238, 0.25); }
+    .tv-header-title p { font-family: var(--mono); font-size: var(--fs-meta); letter-spacing: 1.2px; text-transform: uppercase; color: var(--accent); opacity: 0.85; }
+    .tv-header-title p::before { content: '> '; opacity: 0.7; }
+
+    .tv-clock-badge { background: #03070E; border: 1px solid rgba(34, 211, 238, 0.35); box-shadow: var(--glow-c); color: var(--ink); }
+    .tv-clock-badge .clock-sep { background: rgba(34, 211, 238, 0.25); }
+    .sync-status { color: var(--ink-2); }
+    .sync-status.is-synced .sync-dot { background: #4ADE80; box-shadow: 0 0 8px #4ADE80; animation: led 2s ease-in-out infinite; }
+    .sync-status.is-offline .sync-dot { box-shadow: 0 0 8px #FBBF24; }
+    @keyframes led { 50% { opacity: 0.45; box-shadow: 0 0 2px #4ADE80; } }
+    .tv-fullscreen-btn { background: transparent; border-color: var(--line-strong); color: var(--ink-2); }
+    .tv-fullscreen-btn:hover { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+
+    /* ---------- Pills, sort, buttons ---------- */
+    .tv-pill-btn, .sort-group { background: var(--surface); border-color: var(--line-strong); color: var(--ink-2); }
+    .tv-pill-btn:hover, .sort-btn:hover { background: var(--surface-2); color: var(--ink); }
+    .tv-pill-btn .pill-count { background: var(--surface-2); color: var(--ink-2); }
+    .tv-pill-btn.active, .sort-btn[aria-pressed="true"] {
+      background: var(--accent); border-color: var(--accent); color: #03141A;
+      box-shadow: 0 0 16px rgba(34, 211, 238, 0.35);
+    }
+    .tv-pill-btn.active .pill-count { background: rgba(3, 20, 26, 0.18); color: #03141A; }
+    .tv-pill-btn.p-late .pill-count { color: var(--sev-crit); }
+    .tv-pill-btn.p-late.active .pill-count { color: #03141A; }
+    .sort-label { color: var(--ink-3); }
+    .btn-report { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 0 18px rgba(225, 29, 42, 0.35); }
+    .btn-table-edit, .scroll-toggle-btn { background: transparent; border-color: var(--line-strong); color: var(--ink-2); }
+    .btn-table-edit:hover, .scroll-toggle-btn.active, .scroll-toggle-btn:hover {
+      background: var(--accent-dim); border-color: var(--accent); color: var(--accent);
+    }
+
+    /* ---------- Wall stats as IC chips: pins along top and bottom ---------- */
+    body.tv-wall .tv-filter-bar { padding: 1.1vw 1.3vw; }
+    body.tv-wall .tv-stats-quick { gap: 1.2vw; }
+    body.tv-wall .tv-stat-item {
+      position: relative;
+      flex: 1;
+      justify-content: space-between;
+      padding: 0.55vw 1vw;
+      background: linear-gradient(180deg, #121C2C, #0A111D);
+      border: 1px solid #2A3D5C;
+      border-radius: 6px;
+      color: var(--ink-2);
+    }
+    body.tv-wall .tv-stat-item::before, body.tv-wall .tv-stat-item::after {
+      content: '';
+      position: absolute; left: 12%; right: 12%;
+      height: 0.45vw; min-height: 5px;
+      background: repeating-linear-gradient(90deg, #8A97AB 0 0.5vw, transparent 0.5vw 1.1vw);
+      opacity: 0.55;
+    }
+    body.tv-wall .tv-stat-item::before { top: calc(-0.45vw - 1px); border-radius: 2px 2px 0 0; }
+    body.tv-wall .tv-stat-item::after { bottom: calc(-0.45vw - 1px); border-radius: 0 0 2px 2px; }
+    body.tv-wall .tv-stat-item strong { color: var(--accent); text-shadow: 0 0 14px rgba(34, 211, 238, 0.45); }
+    body.tv-wall .tv-stat-item.stat-late strong { color: var(--sev-crit); text-shadow: 0 0 14px rgba(248, 113, 113, 0.5); }
+    body.tv-wall .tv-stat-item.stat-prog strong { color: var(--c-prog); text-shadow: 0 0 14px rgba(56, 189, 248, 0.45); }
+    body.tv-wall .tv-stat-item.stat-part strong { color: var(--c-part); text-shadow: 0 0 14px rgba(167, 139, 250, 0.45); }
+
+    /* ---------- Table ---------- */
+    .tv-table thead { background: #08101C; }
+    .tv-table th {
+      font-family: var(--mono);
+      text-transform: uppercase;
+      letter-spacing: 1.1px;
+      color: var(--accent);
+      border-bottom: 1px solid rgba(34, 211, 238, 0.35);
+    }
+    .tv-table td { border-bottom-color: var(--line); }
+    .tv-table tr:hover td { background: rgba(34, 211, 238, 0.04); }
+    body.tv-wall .tv-table thead { background: #08101C; }
+    body.tv-wall .tv-table th { color: var(--accent); }
+    body.tv-wall .tv-table tbody tr td { background: transparent; border-bottom-color: var(--line); }
+    body.tv-wall .tv-table tbody tr:nth-child(even) td { background: rgba(255, 255, 255, 0.015); }
+    /* The status stripe glows like a trace carrying current */
+    .tv-table tr td:first-child { box-shadow: inset 4px 0 0 var(--row-st, transparent), inset 22px 0 22px -20px var(--row-st, transparent); }
+    body.tv-wall .tv-table tr td:first-child { box-shadow: inset max(5px, 0.35vw) 0 0 var(--row-st, transparent), inset 2vw 0 2vw -1.8vw var(--row-st, transparent); }
+    .tv-table tr.is-new td { animation: newRowGlow 3s ease-out; }
+    @keyframes newRowGlow { from { background: rgba(34, 211, 238, 0.22); } }
+
+    .tv-issue-text { color: var(--ink); }
+    .act-text { color: var(--ink-2); }
+    .act-done .act-text { color: var(--ink-3); }
+    .machine-line {
+      background: #03070E;
+      border-color: rgba(34, 211, 238, 0.4);
+      color: var(--accent);
+    }
+    .machine-name { color: #F4F8FF; }
+    .report-date, .due-date { color: #F4F8FF; }
+    .pic-name { color: var(--ink-2); }
+    .due-none, .action-empty { color: var(--ink-3); }
+
+    /* Status chips: neon outline over a dark tint, like a lit indicator */
+    .tv-badge, .tv-status-select, .act-chip { border: none; }
+    .tv-badge-repairing, .act-progress .act-chip { background: var(--st-prog-bg); color: var(--c-prog); box-shadow: inset 0 0 0 1px var(--c-prog), 0 0 12px rgba(56, 189, 248, 0.22); }
+    .tv-badge-part { background: var(--st-part-bg); color: var(--c-part); box-shadow: inset 0 0 0 1px var(--c-part), 0 0 12px rgba(167, 139, 250, 0.22); }
+    .tv-badge-pending, .act-todo .act-chip { background: var(--st-pend-bg); color: var(--st-pend); box-shadow: inset 0 0 0 1px #475569; }
+    .tv-badge-done, .act-done .act-chip { background: var(--st-done-bg); color: var(--c-done); box-shadow: inset 0 0 0 1px var(--c-done), 0 0 12px rgba(52, 211, 153, 0.2); }
+    body.tv-wall .status-read.tv-badge-repairing { background: var(--st-prog-bg); color: var(--c-prog); }
+    body.tv-wall .status-read.tv-badge-part { background: var(--st-part-bg); color: var(--c-part); }
+    body.tv-wall .status-read.tv-badge-pending { background: var(--st-pend-bg); color: var(--st-pend); }
+    body.tv-wall .status-read.tv-badge-done { background: var(--st-done-bg); color: var(--c-done); }
+    body.tv-wall .act-progress .act-chip { background: var(--st-prog-bg); color: var(--c-prog); }
+    body.tv-wall .act-done .act-chip { background: var(--st-done-bg); color: var(--c-done); }
+    body.tv-wall .act-todo .act-chip { background: var(--st-pend-bg); color: var(--st-pend); box-shadow: inset 0 0 0 1px #475569; }
+    .tv-status-select option, .action-status option { background: #0B1321; color: var(--ink); }
+
+    .due-late { background: rgba(248, 113, 113, 0.14); color: #FCA5A5; box-shadow: inset 0 0 0 1px #F87171, 0 0 14px rgba(248, 113, 113, 0.35); animation: lateBlink 2.4s ease-in-out infinite; }
+    .due-soon { background: var(--sev-watch-bg); color: var(--sev-watch); box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.6); }
+    @keyframes lateBlink { 50% { box-shadow: inset 0 0 0 1px #F87171, 0 0 4px rgba(248, 113, 113, 0.15); } }
+
+    /* Mascot discs pick up the dark tints; give the technician a little lift off them */
+    .row-mascot { filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.18)); }
+
+    /* ---------- Footer, toast ---------- */
+    .tv-footer { background: #08101C; border-top-color: var(--line); color: var(--ink-3); }
+    .toast-box { background: #0B1321; border: 1px solid rgba(34, 211, 238, 0.35); box-shadow: var(--glow-c), 0 12px 30px rgba(0, 0, 0, 0.5); }
+    .toast-box.is-error { background: #2A1117; border-color: #F87171; }
+
+    /* ---------- Dialogs and forms ---------- */
+    dialog.edit-modal::backdrop { background: rgba(2, 6, 12, 0.72); backdrop-filter: blur(2px); }
+    .edit-modal { background: var(--surface); border: 1px solid var(--line-strong); box-shadow: var(--glow-c), 0 24px 60px rgba(0, 0, 0, 0.6); }
+    .edit-modal-header, .edit-modal-footer { border-color: var(--line) !important; }
+    .modal-input, .modal-select, .modal-textarea { background: #070D18; border-color: var(--line-strong); color: var(--ink); }
+    /* These two carry inline light colours in the page, so only !important reaches them */
+    .modal-input[readonly] { background: var(--surface-2) !important; color: var(--ink-2) !important; }
+    .modal-input::placeholder, .modal-textarea::placeholder { color: #5B6B85; }
+    .modal-input:focus-visible, .modal-select:focus-visible, .modal-textarea:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+    .btn-remove-action:hover { background: rgba(248, 113, 113, 0.12); }
+    input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8); }
+
+    /* ---------- Wall: faint scanlines, like a monitor ---------- */
+    body.tv-wall::after {
+      content: '';
+      position: fixed; inset: 0;
+      pointer-events: none;
+      z-index: 2000;
+      background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 3px);
+    }
+    /* Night mode: status animations on dark discs, neon brightened to read on black */
+    .ai-queue { --ai: #94A3B8; }
+    .ai-busy { --ai: #38BDF8; }
+    .ai-wait { --ai: #A78BFA; }
+    .ai-done { --ai: #34D399; }
+    .ai-disc { fill: #0B1321; filter: drop-shadow(0 0 5px color-mix(in srgb, var(--ai) 70%, transparent)); }
+    .ai-queue path[fill="#F8FAFC"] { fill: #111C2E; stroke: #94A3B8; }
+    .ai-queue rect[fill="#475569"] { fill: #94A3B8; }
+    .ai-wait rect[fill="#F5F3FF"] { fill: #1F1838; stroke: #A78BFA; }
+    .ai-wait path[fill="#DDD6FE"] { fill: #2E2550; stroke: #A78BFA; }
+    .ai-wait rect[fill="#7C3AED"], .ai-wait path[stroke="#7C3AED"] { fill: #A78BFA; stroke: #A78BFA; }
+    .ai-wait circle[fill="#4C1D95"] { fill: #C4B5FD; }
+    .ai-done circle[fill="#ECFDF5"] { fill: #0B2A20; stroke: #34D399; }
+    .ai-done .ai-check { stroke: #34D399; }
+  </style>
+  <style id="sheet-readonly">
+    /* Data comes from the Google Sheet: changes are made in the AppSheet app, so this page only shows them */
+    body.tv-wall .tv-table select.tv-status-select { display: none !important; }
+    body.tv-wall .tv-table .status-read { display: inline-block !important; }
+    .tv-table .col-edit, body.tv-wall .tv-table .col-edit { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- LEFT RAIL: icon + label, no hover-only tooltips -->
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <div class="brand-logo-wrap" title="muRata INNOVATOR IN ELECTRONICS">
+        <img src="murata_logo.png" class="brand-logo" alt="muRata">
+      </div>
+      <nav class="sidebar-nav" aria-label="Views">
+        <button class="nav-icon-btn active" id="tabBtn2" onclick="switchTab('tab2')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M9 9v11"/></svg>
+          Work list
+        </button>
+      </nav>
+    </div>
+    <div class="sidebar-bottom">
+      <button class="nav-icon-btn" onclick="toggleFullScreen()" title="Shortcut: F">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+        TV wall
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN VIEW CONTENT -->
+  <main class="app-main">
+
+    <!-- TAB 2: TV WORK OVERVIEW (SHOWS LOGO IN FULLSCREEN) -->
+    <div id="tab2" class="tab-view active">
+      <div class="tv-wrapper">
+        <div class="tv-header">
+          <div class="tv-header-left">
+            <img src="murata_logo.png" class="tv-header-logo" alt="muRata" onerror="this.style.display='none'">
+            <div class="tv-header-title">
+              <h2>Maintenance Work Overview</h2>
+              <p id="tvSubtitle">Open work orders, oldest reported first</p>
+            </div>
+          </div>
+          <div class="tv-header-right">
+            <div class="tv-clock-badge">
+              <span id="tvLiveClock">--:--</span>
+              <span class="clock-sep" aria-hidden="true"></span>
+              <span class="sync-status" id="tvSyncStatus" role="status" aria-live="polite">
+                <span class="sync-dot" aria-hidden="true"></span>
+                <span id="tvSyncText">Checking data…</span>
+              </span>
+            </div>
+            <div class="view-tabs" role="group" aria-label="View">
+              <button type="button" data-view="list" aria-pressed="true">Work list</button>
+            </div>
+            <button class="tv-fullscreen-btn theme-btn" id="themeBtn" type="button" aria-pressed="false" aria-label="Switch to night mode" title="Night mode">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g class="sun"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g><path class="moon" d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+            </button>
+            <button class="tv-fullscreen-btn" id="tvFsIcon" onclick="toggleFullScreen()" aria-label="TV wall mode" title="TV wall mode (F)"></button>
+          </div>
+        </div>
+
+        <!-- DAILY TO-DO: what each technician plans and did, per day -->
+        <section class="todo-view" id="todoView" aria-label="Daily to-do list" hidden>
+          <div class="todo-bar">
+            <div class="todo-day" role="group" aria-label="Day">
+              <button type="button" class="todo-icon-btn" id="todoPrev" aria-label="Previous day">‹</button>
+              <input type="date" id="todoDate" class="todo-input todo-date" aria-label="Date">
+              <button type="button" class="todo-icon-btn" id="todoNext" aria-label="Next day">›</button>
+              <button type="button" class="todo-btn-ghost" id="todoToday">Today</button>
+            </div>
+            <span class="todo-day-label" id="todoDayLabel"></span>
+            <select id="todoFilter" class="todo-input" aria-label="Technician"></select>
+            <span class="todo-summary" id="todoSummary"></span>
+          </div>
+
+          <form class="todo-add" id="todoForm" autocomplete="off">
+            <label class="todo-field todo-field-tech">
+              <span>Technician</span>
+              <input type="text" id="todoTech" class="todo-input" list="todoTechList" placeholder="Your name" required>
+              <datalist id="todoTechList"></datalist>
+            </label>
+            <label class="todo-field todo-field-text">
+              <span>Task</span>
+              <input type="text" id="todoText" class="todo-input" maxlength="200" placeholder="What you plan to do, or what you did" required>
+            </label>
+            <label class="todo-field todo-field-job">
+              <span>Job <em>optional</em></span>
+              <select id="todoJob" class="todo-input"></select>
+            </label>
+            <button type="submit" class="todo-add-btn" id="todoAddBtn">+ Add</button>
+            <p class="todo-error" id="todoError" role="alert"></p>
+          </form>
+
+          <div class="todo-list" id="todoList" aria-live="polite"></div>
+        </section>
+
+        <!-- TV Filter Bar & Quick Stats -->
+        <div class="tv-filter-bar">
+          <button type="button" class="btn-report" id="btnReport" onclick="openReportModal()">+ Report job</button>
+          <div class="tv-pills">
+            <button class="tv-pill-btn p-focus active" id="tvPillFocus" onclick="filterTV('focus')">
+              Open <span class="pill-count" id="tvCountFocus">0</span>
+            </button>
+            <button class="tv-pill-btn p-late" id="tvPillLate" onclick="filterTV('overdue')">
+              Overdue <span class="pill-count" id="tvCountLate">0</span>
+            </button>
+            <button class="tv-pill-btn" id="tvPillDone" onclick="filterTV('done')">
+              Completed <span class="pill-count" id="tvCountDone">0</span>
+            </button>
+            <button class="tv-pill-btn" id="tvPillAll" onclick="filterTV('all')">
+              All <span class="pill-count" id="tvCountAll">0</span>
+            </button>
+          </div>
+          <div class="sort-group" role="group" aria-label="Sort jobs">
+            <span class="sort-label">Sort</span>
+            <button type="button" class="sort-btn" data-sort="reported-old" onclick="setSort(this.dataset.sort)">Oldest reported</button>
+            <button type="button" class="sort-btn" data-sort="reported-new" onclick="setSort(this.dataset.sort)">Newest reported</button>
+            <button type="button" class="sort-btn" data-sort="due-soon" onclick="setSort(this.dataset.sort)">Due soonest</button>
+          </div>
+          <div class="tv-stats-quick">
+            <div class="tv-stat-item">
+              <span><span class="stat-emoji" aria-hidden="true">📋</span>Open jobs</span> <strong id="tvStatOpen">0</strong>
+            </div>
+            <div class="tv-stat-item stat-late">
+              <span><span class="stat-emoji" aria-hidden="true">📅</span>Overdue</span> <strong id="tvStatLate">0</strong>
+            </div>
+            <div class="tv-stat-item stat-prog">
+              <span><span class="stat-emoji" aria-hidden="true">🔧</span>In progress</span> <strong id="tvStatRep">0</strong>
+            </div>
+            <div class="tv-stat-item stat-part">
+              <span><span class="stat-emoji" aria-hidden="true">📦</span>Awaiting parts</span> <strong id="tvStatPart">0</strong>
+            </div>
+            <div class="tv-stat-item">
+              <span><span class="stat-emoji" aria-hidden="true">⏰</span>Oldest open</span> <strong id="tvStatOldest">–</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- TV Big Table (Work Order ID Column Removed) -->
+        <div class="tv-table-card">
+          <div class="tv-table-container" id="tvScrollContainer">
+            <table class="tv-table">
+              <thead>
+                <tr>
+                  <th class="col-date">Date</th>
+                  <th class="col-line">Equipment</th>
+                  <th class="col-mascot" aria-hidden="true"></th>
+                  <th class="col-problem">Problem</th>
+                  <th class="col-action">Action / Countermeasure</th>
+                  <th class="col-status">Status</th>
+                  <th class="col-due">Due date</th>
+                  <th class="col-pic">PIC</th>
+                  <th class="col-edit">Edit</th>
+                </tr>
+              </thead>
+              <tbody id="tvTableBody"></tbody>
+            </table>
+          </div>
+          <div class="tv-footer">
+            <div>
+              <span id="tvCurrentShowing">Showing 0 items</span>
+              <span class="tv-footer-hint" style="margin-left: var(--s4);">Change status from the dropdown, or use Edit to add and update actions</span>
+            </div>
+            <div>
+              <button class="scroll-toggle-btn" id="autoScrollBtn" onclick="toggleAutoScroll()">
+                ▶ Start Auto-scroll
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Toast Notification Box -->
+  <div id="toastBox" class="toast-box" role="status" aria-live="polite">
+    <span id="toastIcon" aria-hidden="true"></span>
+    <span id="toastMsg">Status updated successfully</span>
+    <button type="button" class="toast-action" id="toastAction" hidden></button>
+    <button type="button" class="toast-close" id="toastClose" onclick="hideToast()" aria-label="Dismiss">&times;</button>
+  </div>
+
+  <!-- Confirm before closing a job -->
+  <dialog id="confirmDialog" class="edit-modal confirm-modal" aria-labelledby="confirmTitle">
+    <div class="edit-modal-header">
+      <h3 id="confirmTitle">Mark job as Completed?</h3>
+    </div>
+    <div class="edit-modal-body">
+      <p><span class="confirm-job" id="confirmJob"></span> will move off the open list and the TV wall.</p>
+    </div>
+    <div class="edit-modal-footer">
+      <button type="button" class="btn-cancel" id="confirmCancel">Keep open</button>
+      <button type="button" class="btn-save-edit" id="confirmOk">Mark Completed</button>
+    </div>
+  </dialog>
+
+  <!-- Report a new job -->
+  <dialog id="reportModal" class="edit-modal" aria-labelledby="reportTitle">
+    <div class="edit-modal-header">
+      <h3 id="reportTitle">Report a job</h3>
+      <button type="button" class="edit-modal-close" onclick="closeReportModal()" aria-label="Close">&times;</button>
+    </div>
+    <div class="edit-modal-body">
+      <div class="form-row">
+        <div class="modal-field">
+          <label for="rpDate">Reported date</label>
+          <input type="date" id="rpDate" class="modal-input" aria-describedby="rpDateError">
+          <span class="field-error" id="rpDateError"></span>
+        </div>
+        <div class="modal-field">
+          <label for="rpId">Job ID <span class="field-optional">optional</span></label>
+          <input type="text" id="rpId" class="modal-input" maxlength="20" autocomplete="off" placeholder="Blank = create one" aria-describedby="rpIdError">
+          <span class="field-error" id="rpIdError"></span>
+        </div>
+      </div>
+      <div class="form-row line-row">
+        <div class="modal-field">
+          <label for="rpLine">Line</label>
+          <select id="rpLine" class="modal-select" onchange="toggleOtherLine()" aria-describedby="rpLineError"></select>
+          <input type="text" id="rpLineOther" class="modal-input" maxlength="12" autocomplete="off" placeholder="New line, e.g. MTL-20" aria-label="New line name" hidden>
+          <span class="field-error" id="rpLineError"></span>
+        </div>
+        <div class="modal-field">
+          <label for="rpEquipment">Equipment code</label>
+          <input type="text" id="rpEquipment" class="modal-input code-input" maxlength="20" autocomplete="off" spellcheck="false" placeholder="e.g. CH-5-1, HEX-4-1" oninput="updateEquipmentPreview()" aria-describedby="rpEquipmentHint rpEquipmentError">
+          <span class="field-hint" id="rpEquipmentHint"></span>
+          <span class="field-error" id="rpEquipmentError"></span>
+        </div>
+      </div>
+      <div class="modal-field">
+        <label for="rpProblem">Problem</label>
+        <textarea id="rpProblem" class="modal-textarea" rows="3" placeholder="What is wrong, and where" aria-describedby="rpProblemError"></textarea>
+        <span class="field-error" id="rpProblemError"></span>
+      </div>
+      <fieldset class="modal-field seg-field">
+        <legend>Severity</legend>
+        <div class="seg">
+          <label class="seg-opt seg-normal"><input type="radio" name="rpSeverity" value="Normal" checked><span>Normal</span></label>
+          <label class="seg-opt seg-watch"><input type="radio" name="rpSeverity" value="Watch"><span>Watch</span></label>
+          <label class="seg-opt seg-crit"><input type="radio" name="rpSeverity" value="Critical"><span>Critical</span></label>
+        </div>
+      </fieldset>
+      <div class="form-row">
+        <div class="modal-field">
+          <label for="rpStatus">Status</label>
+          <select id="rpStatus" class="modal-select">
+            <option value="Pending">Pending</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Awaiting Parts">Awaiting Parts</option>
+          </select>
+        </div>
+        <div class="modal-field">
+          <label for="rpDue">Due date <span class="field-optional">optional</span></label>
+          <input type="date" id="rpDue" class="modal-input" aria-describedby="rpDueError">
+          <span class="field-error" id="rpDueError"></span>
+        </div>
+      </div>
+      <div class="modal-field">
+        <label for="rpEngineer">Engineer In Charge</label>
+        <input type="text" id="rpEngineer" class="modal-input" list="engineerList" autocomplete="off" placeholder="Engineer name" aria-describedby="rpEngineerError">
+        <span class="field-error" id="rpEngineerError"></span>
+      </div>
+      <div class="modal-field">
+        <label for="rpAction">First action <span class="field-optional">optional</span></label>
+        <textarea id="rpAction" class="modal-textarea" rows="2" placeholder="Anything already done or planned"></textarea>
+      </div>
+    </div>
+    <div class="edit-modal-footer">
+      <span class="save-error" id="rpSaveError" role="alert"></span>
+      <button type="button" class="btn-cancel" onclick="closeReportModal()">Cancel</button>
+      <button type="button" class="btn-save-edit" id="rpSubmit" onclick="submitReport()">Report job</button>
+    </div>
+  </dialog>
+
+  <!-- Quick Edit Modal -->
+  <dialog id="editModal" class="edit-modal" aria-labelledby="modalTitle">
+      <div class="edit-modal-header">
+        <h3 id="modalTitle">Edit Maintenance Job</h3>
+        <button type="button" class="edit-modal-close" onclick="closeEditModal()" aria-label="Close">&times;</button>
+      </div>
+      <div class="edit-modal-body">
+        <input type="hidden" id="editModalWoId">
+        <div class="modal-field">
+          <label for="editModalMachine">Equipment / Machine</label>
+          <input type="text" id="editModalMachine" class="modal-input" readonly tabindex="-1" style="background: #F8F9FA; color: #555;">
+        </div>
+        <div class="modal-field">
+          <label for="editModalIssue">Problem</label>
+          <input type="text" id="editModalIssue" class="modal-input" readonly tabindex="-1" style="background: #F8F9FA; color: #555;">
+        </div>
+        <div class="modal-field">
+          <label for="editModalStatus">Status</label>
+          <select id="editModalStatus" class="modal-select">
+            <option value="In Progress">In Progress</option>
+            <option value="Awaiting Parts">Awaiting Parts</option>
+            <option value="Pending">Pending</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </div>
+        <div class="modal-field">
+          <div class="actions-head">
+            <span class="field-label" id="actionsLabel">Actions / Countermeasures</span>
+            <span class="actions-summary" id="actionsSummary"></span>
+          </div>
+          <ol class="action-editor" id="actionEditor" aria-labelledby="actionsLabel"></ol>
+          <p class="actions-empty" id="actionsEmpty">No actions yet. Add the first step taken or planned.</p>
+          <span class="field-error" id="editModalActionError" role="alert"></span>
+          <button type="button" class="btn-add-action" id="btnAddAction" onclick="addActionRow()">+ Add action</button>
+        </div>
+        <div class="form-row">
+          <div class="modal-field">
+            <label for="editModalEngineer">Engineer In Charge</label>
+            <input type="text" id="editModalEngineer" class="modal-input" placeholder="Engineer name..." list="engineerList" autocomplete="off" aria-describedby="editModalEngineerError">
+            <datalist id="engineerList"></datalist>
+            <span class="field-error" id="editModalEngineerError"></span>
+          </div>
+          <div class="modal-field">
+            <label for="editModalDue">Due date</label>
+            <input type="date" id="editModalDue" class="modal-input">
+          </div>
+        </div>
+      </div>
+      <div class="edit-modal-footer">
+        <span class="save-error" id="editModalSaveError" role="alert"></span>
+        <button type="button" class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+        <button type="button" class="btn-save-edit" id="editModalSave" onclick="saveWorkOrderEdit()">Save Changes</button>
+      </div>
+  </dialog>
+
+  <script>
+    const sourceData = [];
+    const sourceActions = [];
+
+    // Translation maps for clean English display
+    function translateStatus(s) {
+      if (!s) return 'Pending';
+      if (s.includes('เสร็จ') || s.toLowerCase().includes('done') || s.toLowerCase().includes('comp')) return 'Completed';
+      if (s.includes('ซ่อม') || s.toLowerCase().includes('progress') || s.toLowerCase().includes('repair')) return 'In Progress';
+      if (s.includes('อะไหล่') || s.toLowerCase().includes('part')) return 'Awaiting Parts';
+      return 'Pending';
+    }
+
+    function translateSeverity(o) {
+      if (!o) return 'Normal';
+      if (o.includes('วิกฤต') || o.toLowerCase().includes('crit')) return 'Critical';
+      if (o.includes('เฝ้าระวัง') || o.toLowerCase().includes('watch') || o.toLowerCase().includes('warn')) return 'Watch';
+      return 'Normal';
+    }
+
+    const BUILT_AT = new Date('2026-10-29T13:21:28');
+
+    // One stroke icon set (Lucide-style, 24px grid, 1.8 stroke)
+    const svgIcon = (paths) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+    const ICONS = {
+      check: svgIcon('<circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.5 2.5L16 9.5"/>'),
+      alert: svgIcon('<path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4"/><path d="M12 17.5h.01"/>'),
+      pencil: svgIcon('<path d="M17 3a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/>'),
+      trash: svgIcon('<path d="M4 7h16"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/>'),
+      expand: svgIcon('<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>'),
+      collapse: svgIcon('<path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/>')
+    };
+
+    function normalizeRow(d) {
+      let id = '', date = '', machine = '', issue = '', action = '', status = '', overall = '', engineer = '', due = '';
+      let isDone = 0, isPending = 0, isCritical = 0;
+
+      for (const k of Object.keys(d)) {
+        // Before the date check: วันกำหนดส่ง also contains วัน. Blank cells arrive as NaN/null.
+        if (k.includes('กำหนด') || k.toLowerCase().includes('due')) due = typeof d[k] === 'string' ? d[k].trim() : '';
+        else if (k.includes('รหัส') || k.toLowerCase().includes('id') || k.toLowerCase().includes('wo')) id = d[k];
+        else if (k.includes('วัน') || k.toLowerCase().includes('date')) date = d[k];
+        else if (k.includes('เครื่องจักร') || k.includes('สายการผลิต') || k.toLowerCase().includes('machine')) machine = d[k];
+        else if (k.includes('ปัญหา') || k.toLowerCase().includes('issue')) issue = d[k];
+        else if (k.toLowerCase() === 'action' || k.includes('action')) action = d[k];
+        else if (k === 'สถานะ' || (k.toLowerCase().includes('status') && !k.includes('รวม'))) status = d[k];
+        else if (k.includes('สถานะรวม') || k.toLowerCase().includes('overall') || k.toLowerCase().includes('severity')) overall = d[k];
+        else if (k.includes('ผู้รับผิดชอบ') || k.includes('ช่าง') || k.toLowerCase().includes('eng')) engineer = d[k];
+        else if (k.includes('เสร็จสิ้น') && typeof d[k] === 'number') isDone = d[k];
+        else if (k.includes('รอดำเนินการ') && typeof d[k] === 'number') isPending = d[k];
+        else if (k.includes('วิกฤต') && typeof d[k] === 'number') isCritical = d[k];
+      }
+
+      if (!id) id = d['รหัสงานซ่อม'] || 'WO-UNKNOWN';
+      const enStatus = translateStatus(status);
+      const enSeverity = translateSeverity(overall);
+
+      if (enStatus === 'Completed') isDone = 1;
+      if (enStatus === 'In Progress' || enStatus === 'Awaiting Parts' || enStatus === 'Pending') isPending = 1;
+      if (enSeverity === 'Critical') isCritical = 1;
+
+      return {
+        id: String(id),
+        date: String(date),
+        machine: String(machine),
+        issue: String(issue),
+        action: String(action),
+        status: enStatus,
+        overall: enSeverity,
+        engineer: String(engineer),
+        due: due,
+        isDone: isDone,
+        isPending: isPending,
+        isCritical: isCritical
+      };
+    }
+
+    // Each job gets its list of actions (rows from actions.csv, ordered by ลำดับ).
+    // With no action rows at all (older server), the job's single `action` text stands in.
+    const ACTION_STATUSES = ['To do', 'In progress', 'Done'];
+
+    function attachActions(jobs, actionRows) {
+      const byJob = {};
+      (actionRows || []).forEach(a => {
+        const id = String(a['รหัสงานซ่อม'] ?? '');
+        (byJob[id] = byJob[id] || []).push(a);
+      });
+      jobs.forEach(job => {
+        const rows = (byJob[job.id] || []).sort((a, b) => Number(a['ลำดับ']) - Number(b['ลำดับ']));
+        if (rows.length || actionRows) {
+          job.actions = rows.map(a => ({
+            text: String(a['รายละเอียด'] ?? ''),
+            status: ACTION_STATUSES.includes(a['สถานะ']) ? a['สถานะ'] : 'To do',
+            updated: String(a['วันที่อัปเดต'] ?? '')
+          }));
+        } else {
+          job.actions = job.action.trim()
+            ? [{ text: job.action.trim(), status: job.isDone === 1 ? 'Done' : 'In progress', updated: job.date }]
+            : [];
+        }
+      });
+      return jobs;
+    }
+
+    let rawData = attachActions(sourceData.map(normalizeRow), sourceActions);
+
+    function escapeHtml(v) {
+      return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    // Whole days since the job was reported (null when the date can't be read)
+    function daysOpen(d) {
+      const reported = new Date(d.date + 'T00:00:00');
+      if (isNaN(reported)) return null;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return Math.max(0, Math.round((today - reported) / 86400000));
+    }
+
+    // "MTL-14 - Chiller CH-14-1" -> { line: 'MTL-14', equipment: 'Chiller CH-14-1' }
+    function splitMachine(machine) {
+      // No backslashes allowed here: this JS lives inside a plain Python string
+      const m = String(machine).match(/^([^ ]+) +- +(.+)$/);
+      return m ? { line: m[1], equipment: m[2] } : { line: '', equipment: String(machine) };
+    }
+
+    // Non-breaking hyphen keeps codes like HEX-4-1 on one line (no backslash escapes in this Python string)
+    const NB_HYPHEN = String.fromCharCode(8209);
+
+    // Days until the due date (negative = late); null when there is no usable due date
+    function daysToDue(d) {
+      if (!d.due) return null;
+      const dueAt = new Date(d.due + 'T00:00:00');
+      if (isNaN(dueAt)) return null;
+      return Math.round((dueAt - new Date(todayIso() + 'T00:00:00')) / 86400000);
+    }
+
+    // An open job past its due date
+    function isOverdue(d) {
+      const left = daysToDue(d);
+      return d.isDone !== 1 && left !== null && left < 0;
+    }
+
+    // Table order, picked with the Sort buttons and remembered on this browser.
+    // Dates are YYYY-MM-DD, so they compare as text; missing dates go last.
+    const SORTS = {
+      'reported-old': { label: 'oldest reported first', key: d => d.date, dir: 1 },
+      'reported-new': { label: 'newest reported first', key: d => d.date, dir: -1 },
+      'due-soon': { label: 'due date soonest first', key: d => d.due, dir: 1 }
+    };
+    let currentSort = 'reported-old';
+    try {
+      const saved = localStorage.getItem('workListSort');
+      if (SORTS[saved]) currentSort = saved;
+    } catch (e) { /* storage blocked: use the default */ }
+
+    function sortForWall(list) {
+      const { key, dir } = SORTS[currentSort];
+      const byDate = (x, y, k, sign) => {
+        const a = k(x) || '', b = k(y) || '';
+        if (!a || !b) return (!a) - (!b);
+        return a < b ? -sign : a > b ? sign : 0;
+      };
+      // Ties fall back to the oldest reported date, so the order is always stable
+      return [...list].sort((a, b) => byDate(a, b, key, dir) || byDate(a, b, d => d.date, 1));
+    }
+
+    function setSort(sort) {
+      if (!SORTS[sort]) return;
+      currentSort = sort;
+      try { localStorage.setItem('workListSort', sort); } catch (e) { /* not remembered, still applied */ }
+      updateSortUi();
+      renderTVTable();
+    }
+
+    function updateSortUi() {
+      document.querySelectorAll('.sort-btn').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.sort === currentSort)));
+      document.getElementById('tvSubtitle').innerText = `Open work orders, ${SORTS[currentSort].label}`;
+    }
+
+    // "2026-10-16" -> "16 Oct 26"; falls back to the raw text if it isn't a date
+    function formatReportDate(raw) {
+      const dt = new Date(String(raw) + 'T00:00:00');
+      if (isNaN(dt)) return String(raw);
+      return dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
+    }
+
+    // Due date cell: the date, plus a flag when an open job is late or due within 3 days
+    function dueCellHtml(d) {
+      if (!d.due) return '<span class="due-none">Not set</span>';
+      const date = `<span class="due-date">${escapeHtml(formatReportDate(d.due))}</span>`;
+      const left = daysToDue(d);
+      if (left === null || d.isDone === 1) return date;
+      if (left < 0) return `${date}<span class="due-flag due-late">Overdue ${-left} d</span>`;
+      if (left === 0) return `${date}<span class="due-flag due-soon">Due today</span>`;
+      if (left <= 3) return `${date}<span class="due-flag due-soon">In ${left} d</span>`;
+      return date;
+    }
+
+    function formatTime(dt) {
+      return dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Jobs come from the Google Sheet behind the AppSheet app ("Publish to web" CSV of the Jobs tab).
+    // Google caches the published file, so a change can take up to about 5 minutes to show.
+    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT1yP6lPQjXLFeL-ZCQg7nctNgJUHlEVPf9vU4jCd6yenmhbJB15jLCKQ4SoUJVIOhbrR5QH80M99Xv/pub?gid=361880163&single=true&output=csv';
+    const REFRESH_MS = 60000;
+
+    // RFC 4180 CSV: quoted fields may hold commas, quotes ("") and line breaks
+    function parseCsv(text) {
+      const rows = [];
+      let row = [], field = '', quoted = false;
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (quoted) {
+          if (c === '"' && text[i + 1] === '"') { field += '"'; i++; }
+          else if (c === '"') quoted = false;
+          else field += c;
+        } else if (c === '"') quoted = true;
+        else if (c === ',') { row.push(field); field = ''; }
+        else if (c === '\n' || c === '\r') {
+          if (c === '\r' && text[i + 1] === '\n') i++;
+          row.push(field); rows.push(row); row = []; field = '';
+        } else field += c;
+      }
+      if (field || row.length) { row.push(field); rows.push(row); }
+      const head = (rows.shift() || []).map(h => h.trim());
+      return rows.filter(r => r.some(v => v.trim())).map(r => Object.fromEntries(head.map((h, i) => [h, (r[i] ?? '').trim()])));
+    }
+
+    // The sheet holds both 2026-02-12 and 10/30/2026 (month first, the sheet's US locale); a first part over 12 is a day
+    function sheetDate(v) {
+      v = String(v || '').trim().split(' ')[0];
+      if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+      const m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (!m) return v;
+      let [mon, day] = [Number(m[1]), Number(m[2])];
+      if (mon > 12) [mon, day] = [day, mon];
+      return `${m[3]}-${String(mon).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+
+    const SHEET_SEVERITY = { P1: 'Critical', P2: 'Watch', P3: 'Normal' };
+    const SHEET_ACT_STATUS = { 'to do': 'To do', 'in progress': 'In progress', 'done': 'Done' };
+
+    // Sheet rows (English AppSheet columns) -> the CSV row shape the page already understands,
+    // plus one action row per filled ActionN / StatusN pair
+    function fromSheet(rows) {
+      const jobs = [], actions = [];
+      rows.filter(r => r.JobID).forEach(r => {
+        const acts = [1, 2, 3, 4, 5].map(n => ({ text: r['Action' + n] || '', status: r['Status' + n] || '' })).filter(a => a.text);
+        jobs.push({
+          'รหัสงานซ่อม': r.JobID,
+          'วันที่แจ้ง': sheetDate(r.ReportDate),
+          'เครื่องจักร_สายการผลิต': r.Factory ? `${r.Factory} - ${r.Equipment}` : r.Equipment,
+          'ปัญหา': r.Problem,
+          'action': acts.length ? acts[acts.length - 1].text : '',
+          'สถานะ': r.Status,
+          'สถานะรวม': SHEET_SEVERITY[r.Priority] || 'Normal',
+          'ช่างผู้รับผิดชอบ': r.PIC || 'Unassigned',
+          'วันกำหนดส่ง': sheetDate(r.DueDate),
+          'งานด่วน': String(r.HighAttention).toUpperCase() === 'TRUE' ? '1' : '0'
+        });
+        acts.forEach((a, i) => actions.push({
+          'รหัสงานซ่อม': r.JobID,
+          'ลำดับ': String(i + 1),
+          'รายละเอียด': a.text,
+          'สถานะ': SHEET_ACT_STATUS[a.status.toLowerCase()] || 'To do',
+          'วันที่อัปเดต': ''
+        }));
+      });
+      return { jobs, actions };
+    }
+    async function refreshData() {
+      const status = document.getElementById('tvSyncStatus');
+      const text = document.getElementById('tvSyncText');
+      try {
+        const r = await fetch(SHEET_CSV_URL, { cache: 'no-store' });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const sheet = fromSheet(parseCsv(await r.text()));
+        if (!sheet.jobs.length) throw new Error('Sheet has no jobs');
+        const next = attachActions(sheet.jobs.map(normalizeRow), sheet.actions);
+        status.className = 'sync-status is-synced';
+        text.innerText = `Updated ${formatTime(new Date())}`;
+        // Only re-render on real changes so charts don't re-animate every minute
+        if (JSON.stringify(next) === JSON.stringify(rawData)) return;
+        rawData = next;
+        renderTVTable();
+      } catch (err) {
+        status.className = 'sync-status is-offline';
+        text.innerText = rawData.length ? 'Sheet offline · showing last data' : 'Cannot reach Google Sheet';
+      }
+    }
+
+    let currentTVFilter = 'focus';
+    let autoScrollInterval = null;
+    let toastTimeout = null;
+
+    // msg is HTML: escape any data that goes into it.
+    // opts.action = { label, run } adds a button; errors stay up until dismissed.
+    function showToast(msg, icon = ICONS.check, opts = {}) {
+      const box = document.getElementById('toastBox');
+      const actionBtn = document.getElementById('toastAction');
+      document.getElementById('toastIcon').innerHTML = icon;
+      document.getElementById('toastMsg').innerHTML = msg;
+      box.classList.toggle('is-error', !!opts.error);
+      box.setAttribute('role', opts.error ? 'alert' : 'status');
+      if (opts.action) {
+        actionBtn.hidden = false;
+        actionBtn.innerText = opts.action.label;
+        actionBtn.onclick = () => { hideToast(); opts.action.run(); };
+      } else {
+        actionBtn.hidden = true;
+        actionBtn.onclick = null;
+      }
+      box.classList.add('show');
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = opts.error ? null : setTimeout(hideToast, opts.duration || 3500);
+    }
+
+    function hideToast() {
+      document.getElementById('toastBox').classList.remove('show');
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = null;
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-icon-btn').forEach(el => el.classList.remove('active'));
+
+      document.getElementById(tabId).classList.add('active');
+      document.getElementById('tabBtn2').classList.add('active');
+      renderTVTable();
+    }
+
+    // TV wall: Tab 2 only, read-only, large type, open jobs, auto-scroll on
+    const TV_URL_MODE = true; // display page: always the wall
+
+    function enterTVWall() {
+      document.body.classList.add('tv-wall');
+      currentTVFilter = 'focus';
+      switchTab('tab2');
+      document.getElementById('tvScrollContainer').scrollTop = 0;
+      startAutoScroll();
+      updateFsIcons(!TV_URL_MODE || !!document.fullscreenElement);
+    }
+
+    function exitTVWall() {
+      if (TV_URL_MODE) return;
+      document.body.classList.remove('tv-wall');
+      stopAutoScroll();
+      filterTV(currentTVFilter);
+      updateFsIcons(false);
+    }
+
+    function toggleFullScreen() {
+      // Opened as ?tv=1: the wall layout is permanent, the button only drives browser fullscreen
+      if (TV_URL_MODE) {
+        if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+        else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
+        return;
+      }
+      const isCurrentlyFs = document.fullscreenElement || document.body.classList.contains('tv-wall');
+      if (!isCurrentlyFs) {
+        enterTVWall();
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        }
+      } else {
+        if (document.exitFullscreen && document.fullscreenElement) {
+          document.exitFullscreen().catch(() => exitTVWall());
+        } else {
+          exitTVWall();
+        }
+      }
+    }
+
+    function updateFsIcons(isFs) {
+      const tvFs = document.getElementById('tvFsIcon');
+      if (tvFs) {
+        tvFs.innerHTML = isFs ? ICONS.collapse : ICONS.expand;
+        tvFs.setAttribute('aria-label', isFs ? 'Leave TV wall mode' : 'TV wall mode');
+      }
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+      if (TV_URL_MODE) {
+        updateFsIcons(!!document.fullscreenElement);
+      } else if (document.fullscreenElement) {
+        if (!document.body.classList.contains('tv-wall')) enterTVWall();
+      } else {
+        exitTVWall();
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if ((e.key === 'f' || e.key === 'F') && !e.ctrlKey && !e.metaKey && !e.altKey &&
+          !['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName) && !document.querySelector('dialog[open]')) {
+        toggleFullScreen();
+      }
+    });
+
+    function updateLiveClock() {
+      const now = new Date();
+      const datePart = now.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+      const el = document.getElementById('tvLiveClock');
+      if (el) el.innerText = `${datePart} · ${formatTime(now)}`;
+    }
+    setInterval(updateLiveClock, 10000);
+    updateLiveClock();
+
+    // ==========================================
+    // TAB 2: TV DISPLAY TABLE
+    // ==========================================
+    function filterTV(filterType) {
+      currentTVFilter = filterType;
+      document.querySelectorAll('.tv-pill-btn').forEach(b => b.classList.remove('active'));
+      if (filterType === 'focus') document.getElementById('tvPillFocus').classList.add('active');
+      else if (filterType === 'overdue') document.getElementById('tvPillLate').classList.add('active');
+      else if (filterType === 'all') document.getElementById('tvPillAll').classList.add('active');
+      else if (filterType === 'done') document.getElementById('tvPillDone').classList.add('active');
+
+      renderTVTable();
+    }
+
+    const STATUS_EMOJI = { 'In Progress': '🔧', 'Awaiting Parts': '📦', 'Pending': '⏳', 'Completed': '✅' };
+    const STATUS_ROW = { 'In Progress': 'st-prog', 'Awaiting Parts': 'st-part', 'Pending': 'st-pend', 'Completed': 'st-done' };
+
+    // Status animation, one per row: a small looping scene of the work itself, drawn as line art
+    // on a white disc with a neon ring in the status colour.
+    //   Pending        hourglass, sand running: queued, not started
+    //   In Progress    two gears meshing and a progress arc sweeping: work under way
+    //   Awaiting Parts delivery truck carrying a chip down the road: part on its way
+    //   Completed      a check mark drawing itself, sparkles: done
+    // Overdue jobs add a pulsing red ring and a "!" badge.
+    const ANIM_MOOD = { 'In Progress': 'busy', 'Awaiting Parts': 'wait', 'Pending': 'queue', 'Completed': 'done' };
+    const ANIM_SCENE = {
+      queue: `
+        <rect x="20" y="12" width="24" height="3.2" rx="1.6" fill="#475569"/>
+        <rect x="20" y="48.8" width="24" height="3.2" rx="1.6" fill="#475569"/>
+        <path d="M23 15.2 h18 c0 9 -7 11 -7 16.8 c0 5.8 7 7.8 7 16.8 h-18 c0 -9 7 -11 7 -16.8 c0 -5.8 -7 -7.8 -7 -16.8 z" fill="#F8FAFC" stroke="#64748B" stroke-width="1.6" stroke-linejoin="round"/>
+        <path class="ai-sand-top" d="M25.2 18 h13.6 c-1 6 -5 8 -6.8 11.5 c-1.8 -3.5 -5.8 -5.5 -6.8 -11.5 z" fill="#F59E0B"/>
+        <line class="ai-stream" x1="32" y1="30" x2="32" y2="47" stroke="#F59E0B" stroke-width="1.4" stroke-dasharray="1.6 2.2" stroke-linecap="round"/>
+        <path class="ai-sand-bot" d="M24.6 48.4 h14.8 c-1 -5 -4 -7.2 -7.4 -8.2 c-3.4 1 -6.4 3.2 -7.4 8.2 z" fill="#F59E0B"/>`,
+      busy: `
+        <circle class="ai-arc" cx="32" cy="32" r="25" fill="none" stroke="#38BDF8" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="34 123"/>
+        <g class="ai-gear-big">
+          <circle cx="27" cy="35" r="10.5" fill="none" stroke="#0284C7" stroke-width="5" stroke-dasharray="3.6 2.9"/>
+          <circle cx="27" cy="35" r="8.6" fill="#0284C7"/>
+          <circle cx="27" cy="35" r="3.2" fill="#FFFFFF"/>
+        </g>
+        <g class="ai-gear-small">
+          <circle cx="42.5" cy="23.5" r="6.6" fill="none" stroke="#38BDF8" stroke-width="4" stroke-dasharray="2.8 2.4"/>
+          <circle cx="42.5" cy="23.5" r="5.2" fill="#38BDF8"/>
+          <circle cx="42.5" cy="23.5" r="2" fill="#FFFFFF"/>
+        </g>`,
+      wait: `
+        <line class="ai-road" x1="6" y1="48.5" x2="58" y2="48.5" stroke="#C4B5FD" stroke-width="2" stroke-dasharray="5 4" stroke-linecap="round"/>
+        <path class="ai-speed" d="M6 27 h6 M4 33 h8 M7 39 h5" stroke="#A78BFA" stroke-width="1.8" stroke-linecap="round"/>
+        <g class="ai-truck">
+          <rect x="14" y="22" width="24" height="18" rx="2" fill="#F5F3FF" stroke="#7C3AED" stroke-width="1.8"/>
+          <rect x="21" y="26.5" width="10" height="9" rx="1.2" fill="#7C3AED"/>
+          <path d="M23 25 v1.5 M26 25 v1.5 M29 25 v1.5 M23 35.5 v1.5 M26 35.5 v1.5 M29 35.5 v1.5" stroke="#7C3AED" stroke-width="1.1" stroke-linecap="round"/>
+          <path d="M38 40 V28 h6.5 l4.5 6 V40 z" fill="#DDD6FE" stroke="#7C3AED" stroke-width="1.8" stroke-linejoin="round"/>
+          <path d="M40.5 30.5 h3.4 l2.6 3.4 h-6 z" fill="#FFFFFF"/>
+          <g class="ai-wheel"><circle cx="21" cy="42" r="4" fill="#4C1D95"/><path d="M21 39 v6 M18 42 h6" stroke="#FFFFFF" stroke-width="1"/></g>
+          <g class="ai-wheel"><circle cx="43" cy="42" r="4" fill="#4C1D95"/><path d="M43 39 v6 M40 42 h6" stroke="#FFFFFF" stroke-width="1"/></g>
+        </g>`,
+      done: `
+        <circle cx="32" cy="33" r="15" fill="#ECFDF5" stroke="#059669" stroke-width="2.4"/>
+        <path class="ai-check" d="M24.5 33.5 l5.2 5.2 l10 -10.4" fill="none" stroke="#059669" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="26" stroke-dashoffset="26"/>
+        <path class="ai-spark" d="M13 15 l1.4 3.2 l3.2 1.4 l-3.2 1.4 l-1.4 3.2 l-1.4 -3.2 l-3.2 -1.4 l3.2 -1.4 z" fill="#F59E0B"/>
+        <path class="ai-spark ai-spark2" d="M51 44 l1.1 2.5 l2.5 1.1 l-2.5 1.1 l-1.1 2.5 l-1.1 -2.5 l-2.5 -1.1 l2.5 -1.1 z" fill="#22D3EE"/>
+        <path class="ai-spark ai-spark3" d="M50 13 l0.9 2 l2 0.9 l-2 0.9 l-0.9 2 l-0.9 -2 l-2 -0.9 l2 -0.9 z" fill="#059669"/>`
+    };
+
+    function mascotSvg(status, late) {
+      const mood = ANIM_MOOD[status] || 'queue';
+      return `<svg class="row-mascot ai ai-${mood}${late ? ' ai-late' : ''}" viewBox="-4 -4 72 72" aria-hidden="true">
+        ${late ? '<circle class="ai-pulse" cx="32" cy="32" r="29.5" fill="none" stroke="#EF4444" stroke-width="2"/>' : ''}
+        <circle class="ai-disc" cx="32" cy="32" r="29.5"/>
+        ${ANIM_SCENE[mood]}
+        ${late ? '<g class="ai-alert"><circle cx="56" cy="8" r="7.5" fill="#DC2626"/><rect x="54.8" y="3" width="2.4" height="6.5" rx="1.2" fill="#FFFFFF"/><circle cx="56" cy="12.3" r="1.4" fill="#FFFFFF"/></g>' : ''}
+      </svg>`;
+    }
+
+    function getStatusBadgeClass(status) {
+      if (status === 'Completed') return 'tv-badge-done';
+      if (status === 'In Progress') return 'tv-badge-repairing';
+      if (status === 'Awaiting Parts') return 'tv-badge-part';
+      return 'tv-badge-pending';
+    }
+
+    function renderTVTable() {
+      const focusItems = rawData.filter(d => d.isPending === 1);
+      const lateItems = rawData.filter(isOverdue);
+      const doneItems = rawData.filter(d => d.isDone === 1);
+      const repItems = rawData.filter(d => d.status === 'In Progress');
+      const partItems = rawData.filter(d => d.status === 'Awaiting Parts');
+
+      document.getElementById('tvCountFocus').innerText = focusItems.length;
+      document.getElementById('tvCountLate').innerText = lateItems.length;
+      document.getElementById('tvCountAll').innerText = rawData.length;
+      document.getElementById('tvCountDone').innerText = doneItems.length;
+
+      const openDays = focusItems.map(daysOpen).filter(n => n !== null);
+      document.getElementById('tvStatOpen').innerText = focusItems.length;
+      document.getElementById('tvStatLate').innerText = lateItems.length;
+      document.getElementById('tvStatRep').innerText = repItems.length;
+      document.getElementById('tvStatPart').innerText = partItems.length;
+      document.getElementById('tvStatOldest').innerText = openDays.length ? `${Math.max(...openDays)} d` : '–';
+      let displayList = rawData;
+      if (currentTVFilter === 'focus') displayList = focusItems;
+      else if (currentTVFilter === 'overdue') displayList = lateItems;
+      else if (currentTVFilter === 'done') displayList = doneItems;
+      displayList = sortForWall(displayList);
+
+      document.getElementById('tvCurrentShowing').innerText = `Showing ${displayList.length} ${displayList.length === 1 ? 'job' : 'jobs'}`;
+      const tbody = document.getElementById('tvTableBody');
+      tbody.innerHTML = displayList.length ? '' : `
+        <tr class="tv-empty"><td colspan="9">
+          <span class="empty-emoji" aria-hidden="true">${currentTVFilter === 'done' ? '📭' : '🎉'}</span>
+          ${currentTVFilter === 'done' ? 'No completed jobs yet' : 'Nothing open here. Nice work, team!'}
+        </td></tr>`;
+
+      displayList.forEach(d => {
+        let statusBadgeClass = getStatusBadgeClass(d.status);
+
+        const { line, equipment } = splitMachine(d.machine);
+        const id = escapeHtml(d.id);
+        const dateCell = `<span class="report-date">${escapeHtml(formatReportDate(d.date))}</span>`;
+
+        const tr = document.createElement('tr');
+        tr.classList.add(STATUS_ROW[d.status] || 'st-pend');
+        const saving = savingIds.has(d.id);
+        if (saving) tr.classList.add('is-saving');
+        tr.innerHTML = `
+          <td>${dateCell}</td>
+          <td>${line ? `<span class="machine-line">${escapeHtml(line)}</span>` : ''}<span class="machine-name" title="${escapeHtml(equipment)}">${escapeHtml(equipmentCode(equipment)).replaceAll('-', NB_HYPHEN)}</span></td>
+          <td class="col-mascot cell-mid">${mascotSvg(d.status, isOverdue(d))}</td>
+          <td><span class="tv-issue-text">${escapeHtml(d.issue)}</span></td>
+          <td>${actionsListHtml(d.actions)}</td>
+          <td class="cell-mid">
+            <span class="tv-badge status-read ${statusBadgeClass}"><span class="st-emoji" aria-hidden="true">${STATUS_EMOJI[d.status] || '⏳'}</span>${escapeHtml(d.status)}</span>
+            <select class="tv-status-select status-edit ${statusBadgeClass}" data-id="${id}" onchange="changeWorkOrderStatus(this.dataset.id, this.value)" aria-label="Status for ${escapeHtml(d.machine)}" ${saving ? 'disabled aria-busy="true"' : ''}>
+              <option value="In Progress" ${d.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+              <option value="Awaiting Parts" ${d.status === 'Awaiting Parts' ? 'selected' : ''}>Awaiting Parts</option>
+              <option value="Pending" ${d.status === 'Pending' ? 'selected' : ''}>Pending</option>
+              <option value="Completed" ${d.status === 'Completed' ? 'selected' : ''}>Completed</option>
+            </select>
+          </td>
+          <td class="due-cell">${dueCellHtml(d)}</td>
+          <td><span class="pic-name">${escapeHtml(d.engineer)}</span></td>
+          <td class="col-edit cell-mid">
+            <button class="btn-table-edit" data-id="${id}" onclick="openEditModal(this.dataset.id)" aria-label="Edit ${escapeHtml(d.machine)}" title="Edit details & action">${ICONS.pencil}</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ==========================================
+    // SAVING: nothing changes on screen until server.py confirms the write
+    // ==========================================
+    const SAVE_TIMEOUT_MS = 8000;
+    const UNDO_MS = 10000;
+    const savingIds = new Set();
+
+    // POST to server.py; resolves on a confirmed write, throws an Error with a user-facing message otherwise
+    async function saveToServer(payload) {
+      const res = await postToServer('/api/update-status', payload);
+      if (res.updated === false) throw new Error(`Job ${payload.id} was not found in the data file`);
+      return res;
+    }
+
+    // POST JSON to server.py; resolves on success, throws an Error with a user-facing message otherwise
+    async function postToServer(url, payload) {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), SAVE_TIMEOUT_MS);
+      let r;
+      try {
+        r = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: ctrl.signal
+        });
+      } catch (err) {
+        throw new Error(err.name === 'AbortError' ? 'The server took too long to answer' : "Can't reach the server");
+      } finally {
+        clearTimeout(timer);
+      }
+      let res = null;
+      try { res = await r.json(); } catch (e) { /* non-JSON error page */ }
+      if (!r.ok || !res) {
+        if (r.status === 404 || r.status === 405 || r.status === 501) throw new Error('This page is not connected to the data server (server.py)');
+        throw new Error((res && res.message) ? (r.status === 400 ? res.message : `Server error: ${res.message}`) : `Server error (HTTP ${r.status})`);
+      }
+      if (res.status !== 'success') throw new Error(res.message ? `Server error: ${res.message}` : 'The server rejected the change');
+      return res;
+    }
+
+    function applyToItem(item, fields) {
+      if (fields.status) {
+        item.status = fields.status;
+        item.isDone = fields.status === 'Completed' ? 1 : 0;
+        item.isPending = fields.status === 'Completed' ? 0 : 1;
+      }
+      if (fields.actions) {
+        item.actions = fields.actions.map(a => ({ ...a }));
+        item.action = item.actions.length ? item.actions[item.actions.length - 1].text : '';
+      }
+      if (fields.engineer) item.engineer = fields.engineer;
+      if (fields.due !== undefined) item.due = fields.due;
+    }
+
+    function rerenderAll() {
+      renderTVTable();
+    }
+
+    // Saves fields for one job. Locks its row while saving, applies on success
+    // (with Undo), and on failure leaves the data untouched and offers Retry.
+    async function commitJobChange(woId, fields, { undoable = true } = {}) {
+      const item = rawData.find(d => d.id === woId);
+      if (!item) return false;
+      const before = { status: item.status, actions: item.actions.map(a => ({ ...a })), engineer: item.engineer, due: item.due };
+      const label = escapeHtml(item.machine);
+
+      savingIds.add(woId);
+      renderTVTable();
+      try {
+        await saveToServer({ id: woId, ...fields });
+      } catch (err) {
+        savingIds.delete(woId);
+        rerenderAll();
+        showToast(`Not saved: ${escapeHtml(err.message)}. <b>${label}</b> is unchanged.`, ICONS.alert, {
+          error: true,
+          action: { label: 'Retry', run: () => commitJobChange(woId, fields, { undoable }) }
+        });
+        return false;
+      }
+      savingIds.delete(woId);
+      applyToItem(item, fields);
+      rerenderAll();
+
+      const what = fields.status && fields.status !== before.status
+        ? `<b>${label}</b> is now <b>${escapeHtml(fields.status)}</b>`
+        : `<b>${label}</b> saved`;
+      const undoFields = { status: before.status };
+      if (fields.actions !== undefined) undoFields.actions = before.actions;
+      if (fields.engineer !== undefined && before.engineer) undoFields.engineer = before.engineer;
+      if (fields.due !== undefined) undoFields.due = before.due;
+      showToast(what, ICONS.check, undoable ? {
+        duration: UNDO_MS,
+        action: { label: 'Undo', run: () => commitJobChange(woId, undoFields, { undoable: false }) }
+      } : {});
+      return true;
+    }
+
+    // Asks before a job is closed; resolves true/false
+    function confirmCompleted(item) {
+      const dlg = document.getElementById('confirmDialog');
+      document.getElementById('confirmJob').innerText = item.machine;
+      return new Promise(resolve => {
+        const ok = document.getElementById('confirmOk');
+        const cancel = document.getElementById('confirmCancel');
+        const finish = (answer) => {
+          ok.onclick = cancel.onclick = dlg.oncancel = dlg.onclick = null;
+          dlg.close();
+          resolve(answer);
+        };
+        ok.onclick = () => finish(true);
+        cancel.onclick = () => finish(false);
+        dlg.oncancel = (e) => { e.preventDefault(); finish(false); };
+        dlg.onclick = (e) => { if (e.target === dlg) finish(false); };
+        dlg.showModal();
+        cancel.focus();
+      });
+    }
+
+    // Status change from the table dropdown
+    async function changeWorkOrderStatus(woId, newStatus) {
+      const item = rawData.find(d => d.id === woId);
+      if (!item || newStatus === item.status) return;
+      if (newStatus === 'Completed' && !(await confirmCompleted(item))) {
+        renderTVTable(); // put the dropdown back
+        return;
+      }
+      await commitJobChange(woId, { status: newStatus });
+    }
+
+    // ==========================================
+    // REPORT A NEW JOB (POST /api/add)
+    // ==========================================
+    const RP_FIELDS = ['Date', 'Id', 'Line', 'Equipment', 'Problem', 'Due', 'Engineer'];
+    const OTHER_LINE = '__other__';
+
+    function fillSuggestions() {
+      const lines = [...new Set(rawData.map(d => splitMachine(d.machine).line).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+      document.getElementById('rpLine').innerHTML = '<option value="">Select a line</option>'
+        + lines.map(l => `<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('')
+        + `<option value="${OTHER_LINE}">Other line…</option>`;
+      document.getElementById('engineerList').innerHTML = [...new Set(rawData.map(d => d.engineer).filter(Boolean))].sort()
+        .map(n => `<option value="${escapeHtml(n)}"></option>`).join('');
+    }
+
+    // Equipment is entered as a code (CH-5-1). The type name in front of it ("Chiller") comes
+    // from existing jobs with the same prefix, so new rows read like the old ones.
+    const EQUIPMENT_CODE = /^[A-Z]{1,6}-[A-Z0-9][A-Z0-9/-]*$/;
+
+    function equipmentTypeNames() {
+      const names = {};
+      rawData.forEach(d => {
+        const words = splitMachine(d.machine).equipment.split(' ');
+        const code = words.pop() || '';
+        const prefix = code.split('-')[0].toUpperCase();
+        if (words.length && EQUIPMENT_CODE.test(code.toUpperCase()) && !names[prefix]) names[prefix] = words.join(' ');
+      });
+      return names;
+    }
+
+    // "Chiller CH-14-1" -> "CH-14-1" for the table; anything without a code stays as written
+    function equipmentCode(equipment) {
+      const last = String(equipment).trim().split(' ').pop().toUpperCase();
+      return EQUIPMENT_CODE.test(last) ? last : String(equipment);
+    }
+
+    function equipmentLabel(code) {
+      const name = equipmentTypeNames()[code.split('-')[0]];
+      return name ? `${name} ${code}` : code;
+    }
+
+    function updateEquipmentPreview() {
+      const code = document.getElementById('rpEquipment').value.trim().toUpperCase();
+      document.getElementById('rpEquipmentHint').innerText = EQUIPMENT_CODE.test(code) ? `Saved as: ${equipmentLabel(code)}` : '';
+    }
+
+    // "Other line…" reveals a box for a line that isn't in the data yet
+    function toggleOtherLine() {
+      const other = document.getElementById('rpLineOther');
+      other.hidden = document.getElementById('rpLine').value !== OTHER_LINE;
+      if (!other.hidden) other.focus();
+    }
+
+    function openReportModal() {
+      ['rpId', 'rpLineOther', 'rpEquipment', 'rpProblem', 'rpDue', 'rpEngineer', 'rpAction'].forEach(id => { document.getElementById(id).value = ''; });
+      document.getElementById('rpDate').value = todayIso();
+      document.getElementById('rpStatus').value = 'Pending';
+      document.querySelector('input[name="rpSeverity"][value="Normal"]').checked = true;
+      fillSuggestions();
+      document.getElementById('rpLine').value = '';
+      document.getElementById('rpLineOther').hidden = true;
+      updateEquipmentPreview();
+      setReportErrors({});
+      setReportSaving(false);
+      document.getElementById('reportModal').showModal();
+      document.getElementById('rpLine').focus();
+    }
+
+    function closeReportModal() {
+      const dlg = document.getElementById('reportModal');
+      if (dlg.open) dlg.close();
+    }
+
+    function setReportErrors(errors) {
+      RP_FIELDS.forEach(f => {
+        const input = document.getElementById(`rp${f}`);
+        const key = f.toLowerCase();
+        document.getElementById(`rp${f}Error`).innerText = errors[key] || '';
+        input.classList.toggle('is-invalid', !!errors[key]);
+        input.setAttribute('aria-invalid', errors[key] ? 'true' : 'false');
+      });
+      document.getElementById('rpSaveError').innerText = errors.save || '';
+    }
+
+    function setReportSaving(saving) {
+      const btn = document.getElementById('rpSubmit');
+      btn.disabled = saving;
+      btn.innerText = saving ? 'Reporting…' : 'Report job';
+    }
+
+    async function submitReport() {
+      const val = (id) => document.getElementById(id).value.trim();
+      const line = val('rpLine') === OTHER_LINE ? val('rpLineOther').toUpperCase() : val('rpLine');
+      const code = val('rpEquipment').toUpperCase();
+      const equipment = EQUIPMENT_CODE.test(code) ? equipmentLabel(code) : code;
+      const job = {
+        id: val('rpId').toUpperCase(),
+        date: val('rpDate'),
+        machine: `${line} - ${equipment}`,
+        problem: val('rpProblem'),
+        severity: document.querySelector('input[name="rpSeverity"]:checked').value,
+        status: val('rpStatus'),
+        engineer: val('rpEngineer'),
+        due: val('rpDue'),
+        action: val('rpAction')
+      };
+
+      const errors = {};
+      if (!job.date || isNaN(new Date(job.date + 'T00:00:00'))) errors.date = 'Pick the date the problem was reported.';
+      else if (job.date > todayIso()) errors.date = 'The reported date cannot be in the future.';
+      if (job.id && !/^[A-Z0-9-]+$/.test(job.id)) errors.id = 'Use letters, numbers and dashes only.';
+      else if (job.id && rawData.some(d => d.id.toUpperCase() === job.id)) errors.id = `Job ${job.id} already exists.`;
+      if (!line) errors.line = val('rpLine') === OTHER_LINE ? 'Type the new line name.' : 'Select the line.';
+      else if (!/^[A-Z0-9-]+$/i.test(line)) errors.line = 'Use letters, numbers and dashes only (e.g. MTL-20).';
+      if (!code) errors.equipment = 'Enter the equipment code.';
+      else if (!EQUIPMENT_CODE.test(code)) errors.equipment = 'Use a code like CH-5-1 or HEX-4-1.';
+      if (!job.problem) errors.problem = 'Describe the problem.';
+      if (job.due && job.date && job.due < job.date) errors.due = 'The due date cannot be before the reported date.';
+      if (!job.engineer) errors.engineer = 'Enter the engineer in charge.';
+      setReportErrors(errors);
+      const firstBad = RP_FIELDS.find(f => errors[f.toLowerCase()]);
+      if (firstBad) {
+        const otherOpen = firstBad === 'Line' && !document.getElementById('rpLineOther').hidden;
+        document.getElementById(otherOpen ? 'rpLineOther' : `rp${firstBad}`).focus();
+        return;
+      }
+
+      setReportSaving(true);
+      let res;
+      try {
+        res = await postToServer('/api/add', job);
+      } catch (err) {
+        setReportSaving(false);
+        // Keep everything typed; the reporter can fix the cause and press Report again
+        setReportErrors({ save: `Not reported: ${err.message}. Your entry is still here.` });
+        return;
+      }
+      setReportSaving(false);
+
+      const added = normalizeRow(res.item);
+      added.actions = job.action
+        ? [{ text: job.action, status: added.isDone === 1 ? 'Done' : 'To do', updated: job.date }]
+        : [];
+      rawData.push(added);
+      closeReportModal();
+
+      // Show it where the reporter will look: the open list, scrolled to the new row
+      currentTVFilter = 'focus';
+      switchTab('tab2');
+      filterTV('focus');
+      const row = document.querySelector(`.btn-table-edit[data-id="${CSS.escape(added.id)}"]`)?.closest('tr');
+      if (row) {
+        row.classList.add('is-new');
+        row.scrollIntoView({ block: 'center' });
+      }
+      showToast(`Job <b>${escapeHtml(added.id)}</b> reported for <b>${escapeHtml(added.machine)}</b>`, ICONS.check, { duration: 6000 });
+    }
+
+    document.getElementById('reportModal').addEventListener('close', () => {
+      document.getElementById('btnReport').focus();
+    });
+    document.getElementById('reportModal').addEventListener('click', (e) => {
+      if (e.target.id === 'reportModal') closeReportModal();
+    });
+
+    // Quick Edit Modal
+    let editModalOpener = null;
+
+    const ACTION_CLASS = { 'To do': 'act-todo', 'In progress': 'act-progress', 'Done': 'act-done' };
+
+    // Work list cell: every action with its own status
+    function actionsListHtml(actions) {
+      if (!actions || !actions.length) return '<span class="action-empty">No actions yet</span>';
+      return '<ol class="action-list">' + actions.map(a => `
+        <li class="${ACTION_CLASS[a.status] || 'act-todo'}">
+          <span class="act-chip">${escapeHtml(a.status)}</span>
+          <span class="act-text">${escapeHtml(a.text)}</span>
+        </li>`).join('') + '</ol>';
+    }
+
+    function todayIso() {
+      const t = new Date(), p = n => String(n).padStart(2, '0');
+      return `${t.getFullYear()}-${p(t.getMonth() + 1)}-${p(t.getDate())}`;
+    }
+
+    // One editable row in the dialog: description + status + remove
+    function addActionRow(action = { text: '', status: 'To do', updated: '' }, { focus = true } = {}) {
+      const list = document.getElementById('actionEditor');
+      const li = document.createElement('li');
+      li.className = 'action-row';
+      li.dataset.origText = action.text;
+      li.dataset.origStatus = action.status;
+      li.dataset.updated = action.updated || '';
+      li.innerHTML = `
+        <span class="action-num" aria-hidden="true"></span>
+        <textarea class="modal-textarea action-text" rows="2" placeholder="What was done, or what needs doing"></textarea>
+        <select class="modal-select action-status ${ACTION_CLASS[action.status] || 'act-todo'}">
+          ${ACTION_STATUSES.map(s => `<option value="${s}" ${s === action.status ? 'selected' : ''}>${s}</option>`).join('')}
+        </select>
+        <button type="button" class="btn-remove-action">${ICONS.trash}</button>`;
+      li.querySelector('.action-text').value = action.text;
+      li.querySelector('.action-status').addEventListener('change', (e) => {
+        e.target.className = `modal-select action-status ${ACTION_CLASS[e.target.value]}`;
+      });
+      li.querySelector('.btn-remove-action').addEventListener('click', () => {
+        const next = li.nextElementSibling || li.previousElementSibling;
+        li.remove();
+        renumberActionRows();
+        (next ? next.querySelector('.action-text') : document.getElementById('btnAddAction')).focus();
+      });
+      list.appendChild(li);
+      renumberActionRows();
+      if (focus) li.querySelector('.action-text').focus();
+    }
+
+    function renumberActionRows() {
+      const rows = [...document.querySelectorAll('#actionEditor .action-row')];
+      rows.forEach((li, i) => {
+        const n = i + 1;
+        li.querySelector('.action-num').innerText = n;
+        li.querySelector('.action-text').setAttribute('aria-label', `Action ${n} description`);
+        li.querySelector('.action-status').setAttribute('aria-label', `Action ${n} status`);
+        li.querySelector('.btn-remove-action').setAttribute('aria-label', `Remove action ${n}`);
+      });
+      const done = rows.filter(li => li.querySelector('.action-status').value === 'Done').length;
+      document.getElementById('actionsEmpty').hidden = rows.length > 0;
+      document.getElementById('actionsSummary').innerText = rows.length ? `${rows.length} ${rows.length === 1 ? 'action' : 'actions'}` : '';
+      return done;
+    }
+
+    // Reads the editor; a row's date only moves when its text or status changed
+    function readActionRows() {
+      return [...document.querySelectorAll('#actionEditor .action-row')].map(li => {
+        const text = li.querySelector('.action-text').value.trim();
+        const status = li.querySelector('.action-status').value;
+        const changed = text !== li.dataset.origText || status !== li.dataset.origStatus;
+        return { text, status, updated: changed || !li.dataset.updated ? todayIso() : li.dataset.updated, el: li };
+      });
+    }
+
+    function openEditModal(woId) {
+      const item = rawData.find(d => d.id === woId);
+      if (!item) return;
+
+      editModalOpener = document.activeElement;
+      document.getElementById('editModalWoId').value = item.id;
+      document.getElementById('modalTitle').innerText = `Edit Job: ${item.machine}`;
+      document.getElementById('editModalMachine').value = item.machine;
+      document.getElementById('editModalIssue').value = item.issue;
+      document.getElementById('editModalStatus').value = item.status;
+      document.getElementById('editModalEngineer').value = item.engineer || '';
+      document.getElementById('editModalDue').value = item.due || '';
+      document.getElementById('engineerList').innerHTML = [...new Set(rawData.map(d => d.engineer).filter(Boolean))]
+        .map(n => `<option value="${escapeHtml(n)}"></option>`).join('');
+      document.getElementById('actionEditor').innerHTML = '';
+      item.actions.forEach(a => addActionRow(a, { focus: false }));
+      renumberActionRows();
+      setEditErrors({});
+      setEditSaving(false);
+
+      const dlg = document.getElementById('editModal');
+      dlg.showModal();
+      document.getElementById('editModalStatus').focus();
+    }
+
+    function closeEditModal() {
+      const dlg = document.getElementById('editModal');
+      if (dlg.open) dlg.close();
+    }
+
+    function setEditErrors(errors) {
+      const eng = document.getElementById('editModalEngineer');
+      document.getElementById('editModalEngineerError').innerText = errors.engineer || '';
+      eng.classList.toggle('is-invalid', !!errors.engineer);
+      eng.setAttribute('aria-invalid', errors.engineer ? 'true' : 'false');
+      document.getElementById('editModalActionError').innerText = errors.action || '';
+      document.querySelectorAll('#actionEditor .action-text').forEach(t => {
+        const bad = (errors.badRows || []).includes(t.closest('.action-row'));
+        t.classList.toggle('is-invalid', bad);
+        t.setAttribute('aria-invalid', bad ? 'true' : 'false');
+      });
+      document.getElementById('editModalSaveError').innerText = errors.save || '';
+    }
+
+    function setEditSaving(saving) {
+      const btn = document.getElementById('editModalSave');
+      btn.disabled = saving;
+      btn.innerText = saving ? 'Saving…' : 'Save Changes';
+    }
+
+    async function saveWorkOrderEdit() {
+      const woId = document.getElementById('editModalWoId').value;
+      const item = rawData.find(d => d.id === woId);
+      if (!item) return;
+
+      const newStatus = document.getElementById('editModalStatus').value;
+      const newEngineer = document.getElementById('editModalEngineer').value.trim();
+      const newDue = document.getElementById('editModalDue').value;
+      const rows = readActionRows();
+
+      const errors = {};
+      if (!newEngineer) errors.engineer = 'Enter the engineer in charge.';
+      const empty = rows.filter(r => !r.text);
+      if (empty.length) {
+        errors.action = 'Describe each action, or remove the empty ones.';
+        errors.badRows = empty.map(r => r.el);
+      } else if (newStatus === 'Completed' && !rows.length) {
+        errors.action = 'Add at least one action before closing the job.';
+      }
+      setEditErrors(errors);
+      if (errors.engineer) { document.getElementById('editModalEngineer').focus(); return; }
+      if (errors.badRows) { errors.badRows[0].querySelector('.action-text').focus(); return; }
+      if (errors.action) { document.getElementById('btnAddAction').focus(); return; }
+
+      const newActions = rows.map(({ text, status, updated }) => ({ text, status, updated }));
+      const sameActions = JSON.stringify(newActions.map(a => [a.text, a.status])) ===
+        JSON.stringify(item.actions.map(a => [a.text, a.status]));
+
+      const fields = { status: newStatus };
+      if (!sameActions) fields.actions = newActions;
+      if (newEngineer !== item.engineer) fields.engineer = newEngineer;
+      if (newDue !== item.due) fields.due = newDue;
+      if (newStatus === item.status && !fields.actions && !fields.engineer && fields.due === undefined) {
+        closeEditModal();
+        return;
+      }
+
+      setEditSaving(true);
+      const saved = await commitJobChange(woId, fields);
+      setEditSaving(false);
+      if (saved) {
+        closeEditModal();
+      } else {
+        // Keep the dialog and the typed text; the toast carries Retry too
+        setEditErrors({ save: 'Not saved. Your changes are still here; try Save again.' });
+      }
+    }
+
+    document.getElementById('editModal').addEventListener('close', () => {
+      // The row may have been re-rendered while the dialog was open, so find its fresh edit button
+      const woId = document.getElementById('editModalWoId').value;
+      const target = (editModalOpener && document.contains(editModalOpener))
+        ? editModalOpener
+        : [...document.querySelectorAll('.btn-table-edit')].find(b => b.dataset.id === woId);
+      if (target) target.focus();
+      editModalOpener = null;
+    });
+    document.getElementById('editModal').addEventListener('click', (e) => {
+      if (e.target.id === 'editModal') closeEditModal();
+    });
+
+    // Scrolls the table, holding at the top (overdue rows) and the bottom so both can be read
+    const SCROLL_HOLD_TICKS = 100; // 100 x 50 ms = 5 s
+    let scrollHold = 0;
+
+    function startAutoScroll() {
+      if (autoScrollInterval) return;
+      const btn = document.getElementById('autoScrollBtn');
+      const container = document.getElementById('tvScrollContainer');
+      btn.innerText = '⏸ Pause Auto-scroll';
+      btn.classList.add('active');
+      scrollHold = SCROLL_HOLD_TICKS;
+      autoScrollInterval = setInterval(() => {
+        if (scrollHold > 0) { scrollHold--; return; }
+        if (container.scrollHeight <= container.clientHeight) return;
+        if (container.scrollTop + container.clientHeight >= container.scrollHeight - 5) {
+          container.scrollTop = 0;
+          scrollHold = SCROLL_HOLD_TICKS;
+        } else {
+          container.scrollTop += 2;
+          if (container.scrollTop + container.clientHeight >= container.scrollHeight - 5) scrollHold = SCROLL_HOLD_TICKS;
+        }
+      }, 50);
+    }
+
+    function stopAutoScroll() {
+      const btn = document.getElementById('autoScrollBtn');
+      clearInterval(autoScrollInterval);
+      autoScrollInterval = null;
+      btn.innerText = '▶ Start Auto-scroll';
+      btn.classList.remove('active');
+    }
+
+    function toggleAutoScroll() {
+      if (autoScrollInterval) stopAutoScroll();
+      else startAutoScroll();
+    }
+
+    // Initial renders
+    updateSortUi();
+    renderTVTable();
+    updateFsIcons(false);
+    if (TV_URL_MODE) enterTVWall();
+    refreshData();
+    setInterval(refreshData, REFRESH_MS);
+  </script>
+  <script>
+    // Day / night: the night sheet sits after the day theme and is switched on by its media attribute.
+    // The choice is remembered on this screen; with none saved, the screen's own light/dark setting decides.
+    (function () {
+      const sheet = document.getElementById('theme-night');
+      const btn = document.getElementById('themeBtn');
+      const read = () => { try { return localStorage.getItem('displayTheme'); } catch (e) { return null; } };
+      const save = (v) => { try { localStorage.setItem('displayTheme', v); } catch (e) { /* not remembered */ } };
+
+      function apply(night) {
+        sheet.media = night ? 'all' : 'not all';
+        document.documentElement.classList.toggle('is-night', night);
+        btn.setAttribute('aria-pressed', String(night));
+        btn.setAttribute('aria-label', night ? 'Switch to day mode' : 'Switch to night mode');
+        btn.title = night ? 'Day mode' : 'Night mode';
+      }
+
+      const saved = read();
+      apply(saved ? saved === 'night' : window.matchMedia('(prefers-color-scheme: dark)').matches);
+      btn.addEventListener('click', () => {
+        const night = !document.documentElement.classList.contains('is-night');
+        save(night ? 'night' : 'day');
+        apply(night);
+      });
+    })();
+
+    // No auto-scroll on the display page: the table stays put and scrolls by hand
+    stopAutoScroll();
+    startAutoScroll = function () {};
+  </script>
+  <script>
+    // ==========================================
+    // DAILY TO-DO: each technician's tasks for a day (todos.csv via /api/todos)
+    // Nothing changes on screen until server.py confirms the write.
+    // ==========================================
+    (function () {
+      const $ = (id) => document.getElementById(id);
+      const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
+      const AVATAR = ['#0284C7', '#7C3AED', '#059669', '#B45309', '#C4161C', '#0E7490', '#475569'];
+      const store = {
+        get: (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+        set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* not remembered */ } }
+      };
+
+      let todos = [];
+      let loaded = false;
+      let day = todayIso();
+      let filter = store.get('todoFilter') || 'ALL';
+
+      const shiftDay = (iso, n) => { const d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() + n); const p = (x) => String(x).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };
+      // "Thursday 29 Oct", with today / yesterday / tomorrow named
+      const dayLabel = (iso) => {
+        const name = new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' });
+        const rel = iso === todayIso() ? 'today' : iso === shiftDay(todayIso(), -1) ? 'yesterday' : iso === shiftDay(todayIso(), 1) ? 'tomorrow' : '';
+        return rel ? `${name} · ${rel}` : name;
+      };
+      const avatar = (name) => {
+        let h = 0; for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+        return `<span class="todo-avatar" style="--avatar:${AVATAR[h % AVATAR.length]}" aria-hidden="true">${escapeHtml(name.slice(0, 2).toUpperCase())}</span>`;
+      };
+      const jobLabel = (id) => {
+        const j = rawData.find(d => d.id === id);
+        return j ? equipmentCode(splitMachine(j.machine).equipment) : id;
+      };
+      const technicians = () => [...new Set([...rawData.map(d => d.engineer), ...todos.map(t => t['ช่าง'])].filter(Boolean))].sort();
+
+      // ---------- Showing the tab ----------
+      // The header subtitle says which view is showing
+      const subtitle = $('tvSubtitle');
+      let listSubtitle = subtitle.textContent;
+
+      function showTodo(on) {
+        if (on && !document.body.classList.contains('show-todo')) listSubtitle = subtitle.textContent;
+        subtitle.textContent = on ? 'Daily to-do: what each technician plans and did' : listSubtitle;
+        document.body.classList.toggle('show-todo', on);
+        $('todoView').hidden = !on;
+        document.querySelectorAll('.view-tabs button').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.view === 'todo') === on)));
+        history.replaceState(null, '', on ? '#todo' : location.pathname + location.search);
+        if (on) { fillPickers(); load(); }
+      }
+      document.querySelectorAll('.view-tabs button').forEach(b => b.addEventListener('click', () => showTodo(b.dataset.view === 'todo')));
+
+      // ---------- Data ----------
+      async function load() {
+        try {
+          const r = await fetch('/api/todos', { cache: 'no-store' });
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          todos = await r.json();
+          loaded = true;
+        } catch (e) {
+          loaded = false;
+        }
+        render();
+      }
+
+      async function change(payload) {
+        const res = await postToServer('/api/todos', payload);   // throws with a readable message
+        return res.item;
+      }
+
+      // ---------- Pickers ----------
+      function fillPickers() {
+        const techs = technicians();
+        $('todoTechList').innerHTML = techs.map(n => `<option value="${escapeHtml(n)}"></option>`).join('');
+        if (!$('todoTech').value) $('todoTech').value = store.get('todoTech') || '';
+        if (filter !== 'ALL' && !techs.includes(filter)) filter = 'ALL';
+        $('todoFilter').innerHTML = '<option value="ALL">All technicians</option>' + techs.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+        $('todoFilter').value = filter;
+        const keep = $('todoJob').value;
+        const open = rawData.filter(d => d.isPending === 1).sort((a, b) => (a.date > b.date) - (a.date < b.date));
+        $('todoJob').innerHTML = '<option value="">No job</option>' + open.map(d =>
+          `<option value="${escapeHtml(d.id)}">${escapeHtml(jobLabel(d.id))} · ${escapeHtml(d.issue.slice(0, 40))}</option>`).join('');
+        $('todoJob').value = open.some(d => d.id === keep) ? keep : '';
+      }
+
+      // ---------- Render ----------
+      function render() {
+        $('todoDate').value = day;
+        $('todoDayLabel').textContent = dayLabel(day);
+        $('todoToday').disabled = day === todayIso();
+        if (!loaded) {
+          $('todoSummary').textContent = '';
+          $('todoList').innerHTML = '<p class="todo-empty"><b aria-hidden="true">🔌</b>Can\'t reach the data server (server.py), so the to-do list can\'t load.</p>';
+          return;
+        }
+        const ofDay = todos.filter(t => t['วันที่'] === day && (filter === 'ALL' || t['ช่าง'] === filter));
+        const done = ofDay.filter(t => t['สถานะ'] === 'Done').length;
+        $('todoSummary').textContent = ofDay.length ? `${done}/${ofDay.length} done` : '';
+        if (!ofDay.length) {
+          $('todoList').innerHTML = `<p class="todo-empty"><b aria-hidden="true">📝</b>No tasks for ${escapeHtml(day === todayIso() ? 'today' : formatReportDate(day))} yet. Add the first one above.</p>`;
+          return;
+        }
+        const byTech = {};
+        ofDay.forEach(t => (byTech[t['ช่าง']] = byTech[t['ช่าง']] || []).push(t));
+        $('todoList').innerHTML = Object.keys(byTech).sort().map(name => {
+          const list = byTech[name].sort((a, b) => ((a['สถานะ'] === 'Done') - (b['สถานะ'] === 'Done')) || (a['บันทึกเมื่อ'] > b['บันทึกเมื่อ']) - (a['บันทึกเมื่อ'] < b['บันทึกเมื่อ']));
+          const n = list.filter(t => t['สถานะ'] === 'Done').length;
+          return `
+            <article class="todo-card">
+              <header class="todo-card-head">
+                ${avatar(name)}<h3>${escapeHtml(name)}</h3>
+                <span class="todo-progress"><i aria-hidden="true"><b style="width:${Math.round(n / list.length * 100)}%"></b></i>${n}/${list.length}</span>
+              </header>
+              <ul class="todo-items">${list.map(itemHtml).join('')}</ul>
+            </article>`;
+        }).join('');
+      }
+
+      function itemHtml(t) {
+        const isDone = t['สถานะ'] === 'Done';
+        const time = (t['บันทึกเมื่อ'] || '').split(' ')[1] || '';
+        return `
+          <li class="todo-item${isDone ? ' is-done' : ''}" data-id="${escapeHtml(t.id)}">
+            <button type="button" class="todo-check" data-act="toggle" role="checkbox" aria-checked="${isDone}" aria-label="${isDone ? 'Mark not done' : 'Mark done'}: ${escapeHtml(t['รายการ'])}">${CHECK}</button>
+            <div class="todo-body">
+              <div class="todo-text">${escapeHtml(t['รายการ'])}</div>
+              <div class="todo-meta">
+                ${t['รหัสงานซ่อม'] ? `<span class="todo-job" title="${escapeHtml(t['รหัสงานซ่อม'])}">${escapeHtml(jobLabel(t['รหัสงานซ่อม']))}</span>` : ''}
+                ${time ? `<span>Added ${escapeHtml(time)}</span>` : ''}
+              </div>
+            </div>
+            <div class="todo-actions">
+              <button type="button" data-act="edit" aria-label="Edit task">${ICONS.pencil}</button>
+              <button type="button" class="del" data-act="delete" aria-label="Delete task">${ICONS.trash}</button>
+            </div>
+          </li>`;
+      }
+
+      // ---------- Actions ----------
+      async function run(li, payload, after) {
+        li.classList.add('is-saving');
+        try {
+          const item = await change(payload);
+          after(item);
+        } catch (err) {
+          showToast(`Not saved: ${escapeHtml(err.message)}.`, ICONS.alert, { error: true });
+        }
+        render();
+      }
+
+      $('todoList').addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-act]');
+        if (!btn) return;
+        const li = btn.closest('.todo-item');
+        const t = todos.find(x => x.id === li.dataset.id);
+        if (!t) return;
+        if (btn.dataset.act === 'toggle') {
+          const done = t['สถานะ'] !== 'Done';
+          run(li, { op: 'update', id: t.id, done }, () => { t['สถานะ'] = done ? 'Done' : 'To do'; });
+        } else if (btn.dataset.act === 'delete') {
+          if (!confirm(`Delete "${t['รายการ']}"?`)) return;
+          run(li, { op: 'delete', id: t.id }, () => { todos = todos.filter(x => x.id !== t.id); });
+        } else if (btn.dataset.act === 'edit') {
+          startEdit(li, t);
+        }
+      });
+
+      // Edit in place: Enter saves, Escape cancels
+      function startEdit(li, t) {
+        const box = li.querySelector('.todo-text');
+        box.innerHTML = `<input type="text" class="todo-input todo-edit-input" maxlength="200" aria-label="Edit task">`;
+        const input = box.querySelector('input');
+        input.value = t['รายการ'];
+        input.focus();
+        input.select();
+        let finished = false;
+        const finish = (save) => {
+          if (finished) return;
+          finished = true;
+          const text = input.value.trim();
+          if (!save || !text || text === t['รายการ']) { render(); return; }
+          run(li, { op: 'update', id: t.id, text }, () => { t['รายการ'] = text; });
+        };
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+          if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+        });
+        input.addEventListener('blur', () => finish(true));
+      }
+
+      $('todoForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const tech = $('todoTech').value.trim(), text = $('todoText').value.trim();
+        $('todoError').textContent = !tech ? 'Enter your name.' : !text ? 'Describe the task.' : '';
+        if (!tech) { $('todoTech').focus(); return; }
+        if (!text) { $('todoText').focus(); return; }
+        $('todoAddBtn').disabled = true;
+        try {
+          const item = await change({ op: 'add', date: day, tech, text, job: $('todoJob').value });
+          todos.push(item);
+          store.set('todoTech', tech);
+          $('todoText').value = '';
+          $('todoJob').value = '';
+          fillPickers();
+          render();
+          $('todoText').focus();
+        } catch (err) {
+          $('todoError').textContent = `Not added: ${err.message}. Your text is still here.`;
+        }
+        $('todoAddBtn').disabled = false;
+      });
+
+      // ---------- Day + filter ----------
+      const setDay = (iso) => { if (iso) { day = iso; render(); } };
+      $('todoPrev').addEventListener('click', () => setDay(shiftDay(day, -1)));
+      $('todoNext').addEventListener('click', () => setDay(shiftDay(day, 1)));
+      $('todoToday').addEventListener('click', () => setDay(todayIso()));
+      $('todoDate').addEventListener('change', (e) => setDay(e.target.value));
+      $('todoFilter').addEventListener('change', (e) => { filter = e.target.value; store.set('todoFilter', filter); render(); });
+
+      // Other screens add tasks too: refresh while the tab is open, unless someone is typing in it
+      setInterval(() => {
+        if (document.body.classList.contains('show-todo') && !document.activeElement.closest('.todo-view input, .todo-view select')) load();
+      }, 30000);
+
+      if (location.hash === '#todo') showTodo(true);
+    })();
+  </script>
+  <script>
+    // ==========================================
+    // HIGH ATTENTION: a per-job flag (CSV column งานด่วน) set with the ⚡ button.
+    // Marked jobs get a tag and a glow and are pinned above the rest, in the chosen sort order.
+    // The flag only changes on screen after server.py confirms the write.
+    // ==========================================
+    (function () {
+      const FIELD = 'งานด่วน';
+      const BOLT = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 2 4 13.5h6.5L9 22l10-12.5h-6.5L13.5 2z"/></svg>';
+      const isOn = (v) => String(v ?? '').trim() === '1';
+
+      // Read the flag wherever jobs are built from CSV rows
+      const baseNormalize = normalizeRow;
+      normalizeRow = function (d) {
+        const job = baseNormalize(d);
+        job.attention = isOn(d[FIELD]);
+        return job;
+      };
+      const byId = new Map(sourceData.map(r => [String(r['รหัสงานซ่อม']), r]));
+      rawData.forEach(j => { j.attention = isOn((byId.get(j.id) || {})[FIELD]); });
+
+      // Pin marked jobs above the rest; each group keeps the chosen order
+      const baseSort = sortForWall;
+      sortForWall = function (list) {
+        const sorted = baseSort(list);
+        return [...sorted.filter(j => j.attention), ...sorted.filter(j => !j.attention)];
+      };
+
+      // Photo counts per job (/api/photos), refreshed with the data
+      let photoIndex = {};
+      async function loadPhotos() {
+        try {
+          const r = await fetch('/api/photos', { cache: 'no-store' });
+          if (!r.ok) return;
+          const next = await r.json();
+          if (JSON.stringify(next) !== JSON.stringify(photoIndex)) { photoIndex = next; renderTVTable(); }
+        } catch (e) { /* no server: no photo counts */ }
+      }
+
+      // Decorate each rendered row: tag, glow, and the ⚡ toggle beside Edit
+      const baseRender = renderTVTable;
+      renderTVTable = function () {
+        baseRender();
+        document.querySelectorAll('#tvTableBody tr').forEach(tr => {
+          const edit = tr.querySelector('.btn-table-edit');
+          if (!edit) return;
+          const job = rawData.find(d => d.id === edit.dataset.id);
+          if (!job) return;
+          tr.classList.toggle('is-attn', !!job.attention);
+          // NEW: reported today; the tag drops off on its own the next day
+          const fresh = job.date === todayIso();
+          const tags = (fresh ? '<span class="new-tag">NEW</span>' : '')
+            + (job.attention ? '<span class="attn-tag">⚡ HIGH ATTENTION</span>' : '');
+          if (tags) tr.querySelector('.machine-name')?.insertAdjacentHTML('beforebegin', `<span class="row-tags">${tags}</span>`);
+          // Photos from the breakdown report: a count that opens the tracking page
+          const n = (photoIndex[job.id] || []).length;
+          if (n) tr.querySelector('.tv-issue-text')?.insertAdjacentHTML('afterend',
+            `<a class="photo-chip" href="Murata_Track.html?job=${encodeURIComponent(job.id)}" target="_blank" rel="noopener" title="ดูรูปที่แนบ">📷 ${n}</a>`);
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'attn-btn';
+          btn.dataset.id = job.id;
+          btn.setAttribute('aria-pressed', String(!!job.attention));
+          btn.setAttribute('aria-label', `${job.attention ? 'Remove' : 'Mark'} high attention: ${job.machine}`);
+          btn.title = job.attention ? 'Remove high attention' : 'Mark high attention';
+          btn.innerHTML = BOLT;
+          if (savingIds.has(job.id)) btn.disabled = true;
+          edit.parentElement.classList.add('edit-cell');
+          edit.parentElement.prepend(btn);
+        });
+      };
+
+      async function setAttention(id, on, { undoable = true } = {}) {
+        const job = rawData.find(d => d.id === id);
+        if (!job || savingIds.has(id)) return;
+        const label = escapeHtml(equipmentCode(splitMachine(job.machine).equipment));
+        savingIds.add(id);
+        renderTVTable();
+        try {
+          await postToServer('/api/update-status', { id, attention: on });
+          job.attention = on;
+          showToast(`<b>${label}</b> ${on ? 'marked high attention' : 'no longer high attention'}`, ICONS.check, undoable ? {
+            duration: UNDO_MS,
+            action: { label: 'Undo', run: () => setAttention(id, !on, { undoable: false }) }
+          } : {});
+        } catch (err) {
+          showToast(`Not saved: ${escapeHtml(err.message)}. <b>${label}</b> is unchanged.`, ICONS.alert, {
+            error: true,
+            action: { label: 'Retry', run: () => setAttention(id, on, { undoable }) }
+          });
+        }
+        savingIds.delete(id);
+        renderTVTable();
+      }
+
+      document.getElementById('tvTableBody').addEventListener('click', (e) => {
+        const btn = e.target.closest('.attn-btn');
+        if (btn) setAttention(btn.dataset.id, btn.getAttribute('aria-pressed') !== 'true');
+      });
+
+      // The table only redraws when data changes, so redraw at midnight to drop yesterday's NEW tags
+      let shownDay = todayIso();
+      setInterval(() => {
+        if (todayIso() !== shownDay) { shownDay = todayIso(); renderTVTable(); }
+      }, 60000);
+
+      renderTVTable();
+      loadPhotos();
+      setInterval(loadPhotos, 60000);
+    })();
+  </script>
+</body>
+</html>
