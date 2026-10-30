@@ -2228,7 +2228,8 @@
           'เครื่องจักร_สายการผลิต': r.Factory ? `${r.Factory} - ${r.Equipment}` : r.Equipment,
           'ปัญหา': r.Problem,
           'action': acts.length ? acts[acts.length - 1].text : '',
-          'สถานะ': r.Status,
+          // Every action done means the job is done, even before AppSheet's Status catches up
+          'สถานะ': acts.length && acts.every(a => a.status.toLowerCase() === 'done') ? 'Completed' : r.Status,
           'สถานะรวม': SHEET_SEVERITY[r.Priority] || 'Normal',
           'ช่างผู้รับผิดชอบ': r.PIC || 'Unassigned',
           'วันกำหนดส่ง': sheetDate(r.DueDate),
