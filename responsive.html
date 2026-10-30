@@ -1649,131 +1649,192 @@
   </style>
   <style id="responsive">
     /* ================================================================== */
-    /* PHONE + TABLET (≤ 900px): the wall table becomes one card per job. */
-    /* The page scrolls as a whole; filters and sort come back, since a   */
-    /* phone is held by one person rather than read from across a room.   */
+    /* PHONE + TABLET (≤ 900px). A phone is held by one person checking   */
+    /* their jobs, not read from across a room: a slim header, one sticky */
+    /* row of filters, and compact job cards that put the machine, its    */
+    /* status and the problem first.                                      */
     /* ================================================================== */
+    .sort-select { display: none; }
+
     @media (max-width: 900px) {
       body.tv-wall .app-main { height: auto !important; min-height: 100dvh; overflow: visible; }
       body.tv-wall .tab-view,
       body.tv-wall #tab2 { height: auto !important; }
       body.tv-wall .tab-view {
-        padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
-                 max(16px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)) !important;
+        padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+                 max(20px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)) !important;
       }
-      body.tv-wall .tv-wrapper { gap: 12px; }
+      body.tv-wall .tv-wrapper { gap: 10px; }
 
-      /* Header: brand on one line, live status and night mode on the next */
-      body.tv-wall .tv-header { flex-direction: column; align-items: stretch; gap: 12px; padding: 14px 16px; }
-      body.tv-wall .tv-header-left { gap: 12px; min-width: 0; }
-      body.tv-wall .tv-header-logo { height: 36px !important; flex: none; }
-      body.tv-wall .tv-header-title { min-width: 0; }
-      body.tv-wall .tv-header-title h2 { font-size: 19px; line-height: 1.2; text-wrap: balance; }
-      body.tv-wall .tv-header-title p { font-size: 11px; letter-spacing: 0.08em; margin-top: 2px; }
-      body.tv-wall .tv-header-right { gap: 8px; }
-      body.tv-wall .tv-clock-badge {
-        flex: 1; min-width: 0; justify-content: space-between;
-        font-size: 13px; padding: 0 12px; min-height: 44px; gap: 10px;
+      /* ---- Header: logo, live status and night mode on one line, title under it ---- */
+      body.tv-wall .tv-header {
+        display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-areas: "logo sync theme" "title title title";
+        align-items: center; gap: 6px 10px; padding: 12px 14px;
       }
-      body.tv-wall .tv-clock-badge > span { white-space: nowrap; }
-      body.tv-wall .sync-dot { width: 8px; height: 8px; }
-      /* One view only, and wall mode means nothing on a phone */
+      body.tv-wall .tv-header-left,
+      body.tv-wall .tv-header-right { display: contents; }
+      body.tv-wall .tv-header-logo { grid-area: logo; height: 30px !important; }
+      body.tv-wall .tv-header-title { grid-area: title; min-width: 0; }
+      body.tv-wall .tv-header-title h2 { font-size: 18px; line-height: 1.25; margin: 0; }
+      body.tv-wall .tv-header-title p { display: none; }
+      /* The phone shows the time itself; keep only "Updated hh:mm" */
+      body.tv-wall .tv-clock-badge {
+        grid-area: sync; justify-self: end; min-width: 0;
+        background: none !important; border: 0 !important; box-shadow: none !important;
+        padding: 0; gap: 6px; font-size: 12px; color: var(--ink-3);
+      }
+      body.tv-wall #tvLiveClock,
+      body.tv-wall .tv-clock-badge .clock-sep { display: none; }
+      body.tv-wall .sync-status { white-space: nowrap; color: var(--ink-3); }
+      body.tv-wall .sync-dot { width: 7px; height: 7px; min-width: 7px; min-height: 7px; }
+      body.tv-wall #themeBtn { grid-area: theme; width: 44px; height: 44px; }
       body.tv-wall .view-tabs,
       body.tv-wall #tvFsIcon { display: none !important; }
-      body.tv-wall #themeBtn { width: 44px; height: 44px; flex: none; }
 
-      /* Filters and sort: two rows of chips that scroll sideways */
+      /* ---- Filters: one sticky row; status chips scroll, sort is a native menu ---- */
       body.tv-wall .tv-filter-bar {
-        display: flex !important; flex-direction: column; align-items: stretch; gap: 8px;
-        padding: 10px 12px !important;
+        display: flex !important; flex-wrap: nowrap; align-items: center; gap: 8px;
+        position: sticky; top: 0; z-index: 20;
+        margin: 0 -12px; padding: 8px 12px !important;
+        border-radius: 0 !important; border-left: 0 !important; border-right: 0 !important;
+        background: color-mix(in srgb, var(--canvas) 88%, transparent) !important;
+        backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 1px 0 var(--line) !important;
       }
+      body.tv-wall .tv-filter-bar::before,
+      body.tv-wall .tv-filter-bar::after { display: none !important; }
       body.tv-wall .tv-stats-quick { display: none !important; }
-      body.tv-wall .tv-pills,
-      body.tv-wall .sort-group {
-        display: flex; flex-wrap: nowrap; gap: 8px; overflow-x: auto;
-        margin: 0 -12px; padding: 2px 12px; scrollbar-width: none;
-        -webkit-overflow-scrolling: touch;
+      body.tv-wall .tv-pills {
+        flex: 1; min-width: 0; display: flex; flex-wrap: nowrap; gap: 6px;
+        overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+        mask-image: linear-gradient(90deg, #000 85%, transparent);
       }
-      body.tv-wall .tv-pills::-webkit-scrollbar,
-      body.tv-wall .sort-group::-webkit-scrollbar { display: none; }
-      body.tv-wall .tv-pill-btn,
-      body.tv-wall .sort-btn { flex: none; min-height: 44px; font-size: 14px; padding: 0 14px; white-space: nowrap; }
-      body.tv-wall .sort-label { flex: none; align-self: center; font-size: 12px; }
+      body.tv-wall .tv-pills::-webkit-scrollbar { display: none; }
+      body.tv-wall .tv-pill-btn {
+        flex: none; height: 44px; padding: 0 14px; border-radius: 22px;
+        font-size: 14px; white-space: nowrap; box-shadow: none !important;
+      }
+      body.tv-wall .sort-group {
+        display: flex !important; flex: none; padding: 0 !important; margin: 0;
+        border: 0 !important; background: none !important; box-shadow: none !important;
+      }
+      body.tv-wall .sort-group > :not(.sort-select) { display: none !important; }
+      body.tv-wall .sort-select {
+        display: block; height: 44px; max-width: 132px; padding: 0 28px 0 12px;
+        border: 1px solid var(--line-strong); border-radius: 22px;
+        background: var(--surface) url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M7 10l5 5 5-5'/%3e%3c/svg%3e") no-repeat right 10px center / 14px;
+        color: var(--ink); font: inherit; font-size: 14px; font-weight: 600;
+        appearance: none; -webkit-appearance: none; cursor: pointer;
+      }
+      body.tv-wall .sort-select:focus-visible { outline: 2px solid var(--brand-ink, #0E7490); outline-offset: 2px; }
 
-      /* Table → cards */
-      body.tv-wall .tv-table-card { overflow: visible; }
+      /* ---- Jobs: separate cards on the page background (no card inside a card) ---- */
+      body.tv-wall .tv-table-card {
+        background: none !important; border: 0 !important; box-shadow: none !important;
+        overflow: visible; border-radius: 0;
+      }
+      body.tv-wall .tv-table-card::before,
+      body.tv-wall .tv-table-card::after { display: none !important; }
       body.tv-wall .tv-table-container { overflow: visible; }
-      body.tv-wall .tv-table,
-      body.tv-wall .tv-table tbody { display: block; width: 100%; min-width: 0; }
+      body.tv-wall .tv-table { display: block; width: 100%; min-width: 0; background: none; }
       body.tv-wall .tv-table thead { display: none; }
+      body.tv-wall .tv-table tbody { display: flex; flex-direction: column; gap: 10px; }
       body.tv-wall .tv-table tr {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1fr) auto;
         grid-template-areas:
-          "eq     eq     mascot"
-          "issue  issue  mascot"
-          "act    act    act"
-          "status status status"
-          "due    date   pic";
+          "mascot eq    eq    status"
+          "issue  issue issue issue"
+          "act    act   act   act"
+          "due    due   date  pic";
+        align-items: center;
         gap: 10px 12px;
-        padding: 16px;
-        border-bottom: 1px solid var(--line);
+        padding: 14px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 4px 14px rgba(15, 23, 42, 0.04);
       }
       body.tv-wall .tv-table td {
         display: block; padding: 0 !important; border: 0 !important;
         text-align: left !important; min-width: 0; width: auto !important;
         box-shadow: none !important; background: none !important;
       }
-      /* The wall's status edge sits on the first cell; on a card that cell is the small date */
-      body.tv-wall .tv-table tr[class] td:first-child,
-      body.tv-wall .tv-table tr td:first-child { box-shadow: none !important; }
       body.tv-wall .tv-table td:nth-child(1) { grid-area: date; }
-      body.tv-wall .report-date { font-size: 14px; }
       body.tv-wall .tv-table td:nth-child(2) { grid-area: eq; }
-      body.tv-wall .tv-table td:nth-child(3) { grid-area: mascot; align-self: start; justify-self: end; }
+      body.tv-wall .tv-table td:nth-child(3) { grid-area: mascot; }
       body.tv-wall .tv-table td:nth-child(4) { grid-area: issue; }
       body.tv-wall .tv-table td:nth-child(5) { grid-area: act; }
-      body.tv-wall .tv-table td:nth-child(6) { grid-area: status; }
+      body.tv-wall .tv-table td:nth-child(6) { grid-area: status; justify-self: end; }
       body.tv-wall .tv-table td:nth-child(7) { grid-area: due; }
       body.tv-wall .tv-table td:nth-child(8) { grid-area: pic; text-align: right !important; }
       body.tv-wall .tv-table td.col-edit { display: none !important; }
-      body.tv-wall .tv-table td[colspan] { grid-column: 1 / -1; grid-row: 1 / -1; text-align: center !important; }
+      body.tv-wall .tv-table td[colspan] { grid-column: 1 / -1; grid-row: 1 / -1; text-align: center !important; padding: 24px 0 !important; }
+      body.tv-wall .tv-table tr:has(td[colspan]) { display: block; }
 
-      /* Small labels where the column header used to say what a value is */
+      /* Machine line: tags sit inline above the code, smaller than on the wall */
+      body.tv-wall .row-tags { gap: 4px; margin-bottom: 3px; }
+      body.tv-wall .new-tag,
+      body.tv-wall .attn-tag { font-size: 10px; padding: 1px 6px; letter-spacing: 0.04em; }
+      body.tv-wall .machine-line { display: none; }
+      body.tv-wall .machine-name { font-size: 19px; line-height: 1.15; }
+      body.tv-wall .row-mascot { width: 44px !important; height: 44px !important; }
+      body.tv-wall .tv-table .status-read {
+        width: auto; padding: 5px 10px; font-size: 13px; white-space: nowrap;
+      }
+      body.tv-wall .tv-table .status-read .st-emoji { margin-right: 4px; }
+
+      body.tv-wall .tv-issue-text { font-size: 16px; font-weight: 600; line-height: 1.45; color: var(--ink); }
+
+      /* Actions: a quiet list under the problem */
+      body.tv-wall .action-list { font-size: 14px; gap: 6px; }
+      body.tv-wall .action-list .act-chip { width: 7em; font-size: 11px; }
+      body.tv-wall .action-empty { font-size: 13px; }
+
+      /* Footer line of the card: small labels over the values */
+      body.tv-wall .tv-table td:nth-child(1),
+      body.tv-wall .tv-table td:nth-child(7),
+      body.tv-wall .tv-table td:nth-child(8) {
+        padding-top: 4px !important; align-self: start;
+      }
       body.tv-wall .tv-table td:nth-child(1)::before,
       body.tv-wall .tv-table td:nth-child(7)::before,
       body.tv-wall .tv-table td:nth-child(8)::before {
         display: block; margin-bottom: 2px;
-        font-family: var(--mono, inherit); font-size: 11px; font-weight: 700;
-        letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3);
+        font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3);
       }
       body.tv-wall .tv-table td:nth-child(1)::before { content: "Reported"; }
       body.tv-wall .tv-table td:nth-child(7)::before { content: "Due"; }
       body.tv-wall .tv-table td:nth-child(8)::before { content: "PIC"; }
       body.tv-wall .tv-table td[colspan]::before { content: none !important; }
+      body.tv-wall .report-date,
+      body.tv-wall .due-cell,
+      body.tv-wall .pic-name { font-size: 14px; }
+      body.tv-wall .pic-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+      body.tv-wall .due-cell > * { font-size: inherit; }
 
-      /* Sizes for a hand-held screen */
-      body.tv-wall .tv-table td:nth-child(1),
-      body.tv-wall .tv-table td:nth-child(8) { font-size: 14px; }
-      body.tv-wall .machine-name { font-size: 20px; }
-      body.tv-wall .tv-issue-text { font-size: 16px; line-height: 1.45; }
-      body.tv-wall .row-mascot { width: 56px !important; height: 56px !important; }
-      body.tv-wall .action-list .act-chip { width: 7.6em; font-size: 12px; }
-      body.tv-wall .action-list { font-size: 15px; }
-      body.tv-wall .tv-table .status-read { width: auto; padding: 6px 12px; font-size: 15px; }
-      body.tv-wall .due-cell { font-size: 15px; }
-      body.tv-wall .pic-name { font-size: 15px; white-space: normal; }
+      /* The wall's status edge sits on the first cell: not on a card */
+      body.tv-wall .tv-table tr[class] td:first-child,
+      body.tv-wall .tv-table tr td:first-child { box-shadow: none !important; }
+      /* Marked jobs: amber outline and tint instead */
+      body.tv-wall .tv-table tr.is-attn {
+        border-color: #F59E0B;
+        background: color-mix(in srgb, #F59E0B 7%, var(--surface));
+        box-shadow: 0 0 0 1px #F59E0B, 0 4px 14px rgba(245, 158, 11, 0.12);
+      }
 
-      /* Marked jobs keep their amber edge, now along the top of the card */
-      body.tv-wall .tv-table tr.is-attn { box-shadow: inset 0 3px 0 #F59E0B; background: rgba(245, 158, 11, 0.07); }
-
-      body.tv-wall .tv-footer { padding: 12px 16px; font-size: 13px; }
+      body.tv-wall .tv-footer {
+        background: none !important; border: 0 !important; padding: 4px 2px; font-size: 12px; text-align: center;
+      }
+      body.tv-wall .tv-footer > div:last-child { display: none; }
     }
 
     /* Touch screens of any size: controls large enough for a thumb */
     @media (pointer: coarse) {
       body.tv-wall #themeBtn, body.tv-wall #tvFsIcon { min-width: 44px; min-height: 44px; }
       body.tv-wall .tv-pill-btn, body.tv-wall .sort-btn { min-height: 44px; }
+      .toast-close, #toastBox button { min-width: 44px; min-height: 44px; }
     }
   </style>
 </head>
@@ -3570,6 +3631,25 @@
       renderTVTable();
       loadPhotos();
       setInterval(loadPhotos, 60000);
+    })();
+  </script>
+  <script>
+    (function () {
+      const group = document.querySelector('.sort-group');
+      if (!group) return;
+      const sel = document.createElement('select');
+      sel.className = 'sort-select';
+      sel.setAttribute('aria-label', 'Sort jobs');
+      group.querySelectorAll('.sort-btn').forEach(b => sel.add(new Option(b.textContent.trim(), b.dataset.sort)));
+      const sync = () => {
+        const on = group.querySelector('.sort-btn[aria-pressed="true"]');
+        if (on) sel.value = on.dataset.sort;
+      };
+      sel.addEventListener('change', () => setSort(sel.value));
+      const baseUpdate = updateSortUi;
+      updateSortUi = function () { baseUpdate.apply(this, arguments); sync(); };
+      group.appendChild(sel);
+      sync();
     })();
   </script>
 </body>
