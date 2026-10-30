@@ -1657,6 +1657,14 @@
     .sort-select { display: none; }
 
     @media (max-width: 900px) {
+      /* The wall locks the body to one screen (100vh, overflow hidden): a phone must scroll */
+      /* clip, not hidden: hidden would make body a scroll box and break the sticky filter row */
+      html { overflow-x: clip; }
+      body, body.tv-wall {
+        height: auto !important; min-height: 100dvh;
+        overflow: visible !important; overflow-x: clip !important;
+        display: block !important;
+      }
       body.tv-wall .app-main { height: auto !important; min-height: 100dvh; overflow: visible; }
       body.tv-wall .tab-view,
       body.tv-wall #tab2 { height: auto !important; }
