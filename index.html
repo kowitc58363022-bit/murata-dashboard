@@ -2176,9 +2176,23 @@
     }
 
     // Jobs come from the Google Sheet behind the AppSheet app ("Publish to web" CSV of the Jobs tab).
-    // Google caches the published file, so a change can take up to about 5 minutes to show.
+    // Google caches the published file, so a change can take up to about 5 minutes to show;
+    // the Apps Script web app (appsheet/Dashboard_Feed.gs) reads the sheet live and is tried first.
+    const SHEET_LIVE_URL = 'https://script.google.com/macros/s/AKfycbybpvLuz8_rR3g7osvYuCDjGYd-ReT9wVC4FOZ33WPqZ4mRRla7VEYw71vRVQZ6HWCQ/exec';
     const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT1yP6lPQjXLFeL-ZCQg7nctNgJUHlEVPf9vU4jCd6yenmhbJB15jLCKQ4SoUJVIOhbrR5QH80M99Xv/pub?gid=361880163&single=true&output=csv';
-    const REFRESH_MS = 60000;
+    const REFRESH_MS = SHEET_LIVE_URL ? 20000 : 60000;
+
+    async function fetchSheetCsv() {
+      if (SHEET_LIVE_URL) {
+        try {
+          const r = await fetch(SHEET_LIVE_URL, { cache: 'no-store' });
+          if (r.ok) return { text: await r.text(), live: true };
+        } catch (e) { /* fall back to the published copy */ }
+      }
+      const r = await fetch(SHEET_CSV_URL, { cache: 'no-store' });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return { text: await r.text(), live: false };
+    }
 
     // RFC 4180 CSV: quoted fields may hold commas, quotes ("") and line breaks
     function parseCsv(text) {
@@ -2249,13 +2263,12 @@
       const status = document.getElementById('tvSyncStatus');
       const text = document.getElementById('tvSyncText');
       try {
-        const r = await fetch(SHEET_CSV_URL, { cache: 'no-store' });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const sheet = fromSheet(parseCsv(await r.text()));
+        const feed = await fetchSheetCsv();
+        const sheet = fromSheet(parseCsv(feed.text));
         if (!sheet.jobs.length) throw new Error('Sheet has no jobs');
         const next = attachActions(sheet.jobs.map(normalizeRow), sheet.actions);
         status.className = 'sync-status is-synced';
-        text.innerText = `Updated ${formatTime(new Date())}`;
+        text.innerText = `Updated ${formatTime(new Date())}${feed.live || !SHEET_LIVE_URL ? '' : ' · delayed copy'}`;
         // Only re-render on real changes so charts don't re-animate every minute
         if (JSON.stringify(next) === JSON.stringify(rawData)) return;
         rawData = next;
