@@ -2265,7 +2265,6 @@
       try {
         const feed = await fetchSheetCsv();
         const sheet = fromSheet(parseCsv(feed.text));
-        if (!sheet.jobs.length) throw new Error('Sheet has no jobs');
         const next = attachActions(sheet.jobs.map(normalizeRow), sheet.actions);
         status.className = 'sync-status is-synced';
         text.innerText = `Updated ${formatTime(new Date())}${feed.live || !SHEET_LIVE_URL ? '' : ' · delayed copy'}`;
@@ -3072,6 +3071,8 @@
     if (TV_URL_MODE) enterTVWall();
     refreshData();
     setInterval(refreshData, REFRESH_MS);
+    // Background tabs slow timers to about once a minute: catch up the moment the page is shown again
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshData(); });
   </script>
   <script>
     // Day / night: the night sheet sits after the day theme and is switched on by its media attribute.
